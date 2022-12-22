@@ -1,16 +1,44 @@
+# YAML aliases for MQTT SSL version.
+default: &default 0
+tls_1_0: &tls_1_0 1
+tls_1_1: &tls_1_1 2
+tls_1_2: &tls_1_2 3
+
 broker:
-  host: localhost
-  port: 1883
+  host: iot-pr.oxin.nz
+  # port: 8883
+  port: 443
+  tls:
+    enabled: true
+    ca_certificate: /opt/oxin/certs/AmazonRootCA1.pem
+client:
+  id: oxx1
+  clean_session: false
+  keep_alive_interval: 6.0
+  tls:
+    certificate: /opt/oxin/certs/57259bb1ea8ddc6e11cda45387e7e4f360bd76e668a7cfbfa4bdc7c34071a31f-certificate.pem.crt
+    key: /opt/oxin/certs/57259bb1ea8ddc6e11cda45387e7e4f360bd76e668a7cfbfa4bdc7c34071a31f-private.pem.key
+    # AWS uses TLS 1.2 to encrypt all communication.
+    version: *tls_1_2
+    verify: true
+    # https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_alpn_protos.html
+    alpn_protos: 
+      # MQTT over AWS IOT requires an ALPN protocol negotiation.
+      # https://docs.aws.amazon.com/iot/latest/developerguide/protocols.html
+      - x-amzn-mqtt-ca
+  buffer:
+    enabled: true
 bridge:
-  ros2mqtt:
-    - ros_topic: /ping/ros
-      mqtt_topic: pingpong/ros
-    - ros_topic: /ping/primitive
-      mqtt_topic: pingpong/primitive
-      primitive: true
+  # ros2mqtt:
+  #   - ros_topic: /ping/ros
+  #     mqtt_topic: pingpong/ros
+  #   - ros_topic: /ping/primitive
+  #     mqtt_topic: pingpong/primitive
+  #     primitive: true
   mqtt2ros:
-    - mqtt_topic: pingpong/ros
-      ros_topic: /pong/ros
-    - mqtt_topic: pingpong/primitive
-      ros_topic: /pong/primitive
-      primitive: true
+    - mqtt_topic: vehicle/oxx1/command
+      ros_topic: /command
+    - mqtt_topic: vehicle/oxx1/heartbeat
+      ros_topic: /heartbeat
+    - mqtt_topic: vehicle/oxx1/base
+      ros_topic: /base

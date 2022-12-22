@@ -195,6 +195,9 @@ void MqttClient::loadParameters() {
       loadParameter("client/tls/key", client_tls_key);
       loadParameter("client/tls/password", client_config_.tls.password);
     }
+    loadParameter("client/tls/version", client_config_.tls.version);
+    loadParameter("client/tls/verify", client_config_.tls.verify);
+    loadParameter("client/tls/alpn_protos", client_config_.tls.alpn_protos);
   }
 
   // resolve filepaths
@@ -356,19 +359,19 @@ bool MqttClient::loadParameter(const std::string& key, std::string& value,
 }
 
 
-std::filesystem::path MqttClient::resolvePath(const std::string& path_string) {
+filesystem::path MqttClient::resolvePath(const std::string& path_string) {
 
-  std::filesystem::path path(path_string);
+  filesystem::path path(path_string);
   if (path_string.empty()) return path;
   if (!path.has_root_path()) {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
     if (ros_home.empty())
-      ros_home = std::string(std::filesystem::current_path());
-    path = std::filesystem::path(ros_home);
+      ros_home = std::string(filesystem::current_path());
+    path = filesystem::path(ros_home);
     path.append(path_string);
   }
-  if (!std::filesystem::exists(path))
+  if (!filesystem::exists(path))
     NODELET_WARN("Requested path '%s' does not exist",
                  std::string(path).c_str());
   return path;
@@ -434,6 +437,9 @@ void MqttClient::setupClient() {
       if (!client_config_.tls.password.empty())
         ssl.set_private_key_password(client_config_.tls.password);
     }
+    ssl.set_ssl_version(client_config_.tls.version);
+    ssl.set_verify(client_config_.tls.verify);
+    ssl.set_alpn_protos(client_config_.tls.alpn_protos);
     connect_options_.set_ssl(ssl);
   }
 

@@ -7,5 +7,5 @@
     <rosparam command="delete" param="" if="$(arg load_params)" />
     <rosparam command="load" file="$(arg params_file)" if="$(arg load_params)" />
   </node>
-  
+
 </launch>

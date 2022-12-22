@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
 project(mqtt_client)
 
 ## Compile as C++17
-add_compile_options(-std=c++17)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
