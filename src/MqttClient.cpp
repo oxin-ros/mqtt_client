@@ -444,7 +444,7 @@ void MqttClient::setupClient() {
   }
 
   // create MQTT client
-  std::string protocol = broker_config_.tls.enabled ? "ssl" : "tcp";
+  const std::string protocol = broker_config_.tls.enabled ? "ssl" : "tcp";
   const auto uri = fmt::format("{}://{}:{}", protocol, broker_config_.host, broker_config_.port);
   try {
     if (client_config_.buffer.enabled) {
