@@ -45,10 +45,7 @@ SOFTWARE.
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
 #include <topic_tools/shape_shifter.h>
-
-// #include <boost/algorithm/string/join.hpp>
-// #include <boost/range/adaptor/transformed.hpp>
-
+#include <rosfmt/full.h>
 
 /**
  * @brief Namespace for the mqtt_client package
@@ -511,9 +508,9 @@ template <typename T>
 bool MqttClient::loadParameter(const std::string& key, std::vector<T>& value)
 {
   const bool found = private_node_handle_.getParam(key, value);
-  // if (found)
-  //   NODELET_DEBUG("Retrieved parameter '%s' = '[%s]'", key.c_str(),
-  //                 boost::algorithm::join(value | boost::adaptors::transformed(to_string), ", ").c_str());
+  if (found)
+    NODELET_DEBUG("Retrieved parameter '%s' = '[%s]'", key.c_str(),
+                  fmt::format("{}", fmt::join(value, ", ")).c_str());
   return found;
 }
 
@@ -522,12 +519,12 @@ bool MqttClient::loadParameter(const std::string& key, std::vector<T>& value,
                                const std::vector<T>& default_value)
 {
   const bool found = private_node_handle_.param<T>(key, value, default_value);
-  // if (!found)
-  //   NODELET_WARN("Parameter '%s' not set, defaulting to '%s'", key.c_str(),
-  //                 boost::algorithm::join(default_value | boost::adaptors::transformed(to_string), ", "));
-  // if (found)
-  //   NODELET_DEBUG("Retrieved parameter '%s' = '%s'", key.c_str(),
-  //                 boost::algorithm::join(value | boost::adaptors::transformed(to_string), ", "));
+  if (!found)
+    NODELET_WARN("Parameter '%s' not set, defaulting to '%s'", key.c_str(),
+                  fmt::format("{}", fmt::join(value, ", ")).c_str());
+  if (found)
+    NODELET_DEBUG("Retrieved parameter '%s' = '%s'", key.c_str(),
+                  fmt::format("{}", fmt::join(value, ", ")).c_str());
   return found;
 }
 

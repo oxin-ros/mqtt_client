@@ -684,7 +684,7 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
                    ::tolower);
     if (bool_str == "true" || bool_str == "false") {
 
-      bool bool_msg = (bool_str == "true");
+      const bool bool_msg = (bool_str == "true");
 
       // construct and serialize ROS message
       std_msgs::Bool msg;
