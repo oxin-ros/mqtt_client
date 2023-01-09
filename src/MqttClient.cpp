@@ -445,8 +445,7 @@ void MqttClient::setupClient() {
 
   // create MQTT client
   std::string protocol = broker_config_.tls.enabled ? "ssl" : "tcp";
-  std::string uri = protocol + std::string("://") + broker_config_.host +
-                    std::string(":") + std::to_string(broker_config_.port);
+  const auto uri = fmt::format("{}://{}:{}", protocol, broker_config_.host, broker_config_.port);
   try {
     if (client_config_.buffer.enabled) {
       client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
@@ -505,7 +504,7 @@ void MqttClient::ros2mqtt(const topic_tools::ShapeShifter::ConstPtr& ros_msg,
     // resolve ROS messages to primitive strings if possible, else serialize
     // entire message to string
     std::string payload;
-    bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
+    const bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
     if (found_primitive)
       payload_buffer = std::vector<uint8_t>(payload.begin(), payload.end());
     else

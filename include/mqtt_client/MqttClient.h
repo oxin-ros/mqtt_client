@@ -28,6 +28,7 @@ SOFTWARE.
 #pragma once
 
 // GCC 7 doesn't support std::filesystem.
+// This is needed to support ROS Melodic.
 #if __GNUC__ < 8
   #include "filesystem.hpp"
   namespace filesystem = ghc::filesystem;

@@ -22,7 +22,7 @@ client:
     version: *tls_1_2
     verify: true
     # https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_alpn_protos.html
-    alpn_protos: 
+    alpn_protos:
       # MQTT over AWS IOT requires an ALPN protocol negotiation.
       # https://docs.aws.amazon.com/iot/latest/developerguide/protocols.html
       - x-amzn-mqtt-ca
