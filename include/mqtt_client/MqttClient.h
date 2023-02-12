@@ -346,7 +346,7 @@ class MqttClient : public nodelet::Nodelet,
     std::string user;  ///< username
     std::string pass;  ///< password
     struct {
-      bool enabled;  ///< whether to connect via SSL/TLS
+      bool enabled;      ///< whether to connect via SSL/TLS
       fs::path
         ca_certificate;  ///< public CA certificate trusted by client
     } tls;               ///< SSL/TLS-related variables
@@ -358,10 +358,10 @@ class MqttClient : public nodelet::Nodelet,
   struct ClientConfig {
     std::string id;  ///< client unique ID
     struct {
-      bool enabled;                     ///< whether client buffer is enabled
-      int size;                         ///< client buffer size
+      bool enabled;        ///< whether client buffer is enabled
+      int size;            ///< client buffer size
       fs::path directory;  ///< client buffer directory
-    } buffer;                           ///< client buffer-related variables
+    } buffer;              ///< client buffer-related variables
     struct {
       std::string topic;         ///< last-will topic
       std::string message;       ///< last-will message
@@ -372,13 +372,14 @@ class MqttClient : public nodelet::Nodelet,
     double keep_alive_interval;  ///< keep-alive interval
     int max_inflight;            ///< maximum number of inflight messages
     struct {
-      fs::path certificate;         ///< client certificate
-      fs::path key;                 ///< client private keyfile
-      std::string password;                 ///< decryption password for private key
-      int version;                          ///< TLS version
-      bool verify;                          ///< Verify the client should conduct post-connect checks
-      std::vector<std::string> alpn_protos; ///< list of ALPN protocols
-    } tls;                                  ///< SSL/TLS-related variables
+      fs::path certificate;                  ///< client certificate
+      fs::path key;                          ///< client private keyfile
+      std::string password;                  ///< decryption password for private key
+      int version;                           ///< TLS version
+      bool verify;                           ///< Verify the client should conduct
+                                             ///< post-connect checks
+      std::vector<std::string> alpn_protos;  ///< list of ALPN protocols
+    } tls;                                   ///< SSL/TLS-related variables
   };
 
   /**
