@@ -6,14 +6,18 @@ tls_1_2: &tls_1_2 3
 
 broker:
   host: iot-pr.oxin.nz
-  # port: 8883
-  port: 443
+  port: 8883
   tls:
     enabled: true
     ca_certificate: /opt/oxin/certs/AmazonRootCA1.pem
 client:
   id: oxx1
+  # Whether or not to start a clean session with each reconnect.
+  # If True, the server will forget all subscriptions with each reconnect.
+  # Set False to request that the server resume an existing session or start
+  # a new session that may be resumed after a connection loss.
   clean_session: false
+  # The keep alive value, in seconds, to send in CONNECT packet.
   keep_alive_interval: 6.0
   tls:
     certificate: /opt/oxin/certs/57259bb1ea8ddc6e11cda45387e7e4f360bd76e668a7cfbfa4bdc7c34071a31f-certificate.pem.crt
@@ -29,16 +33,17 @@ client:
   buffer:
     enabled: true
 bridge:
-  # ros2mqtt:
-  #   - ros_topic: /ping/ros
-  #     mqtt_topic: pingpong/ros
-  #   - ros_topic: /ping/primitive
-  #     mqtt_topic: pingpong/primitive
-  #     primitive: true
+  ros2mqtt:
+    - mqtt_topic: vehicle/oxx1/heartbeat
+      ros_topic: /mqtt/heartbeat
+      primitive: true
   mqtt2ros:
     - mqtt_topic: vehicle/oxx1/command
-      ros_topic: /command
+      ros_topic: /mqtt/command
+      primitive: true
     - mqtt_topic: vehicle/oxx1/heartbeat
-      ros_topic: /heartbeat
+      ros_topic: /mqtt/heartbeat
+      primitive: true
     - mqtt_topic: vehicle/oxx1/base
-      ros_topic: /base
+      ros_topic: /mqtt/basestation
+      primitive: true
