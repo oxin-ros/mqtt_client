@@ -23,7 +23,7 @@ find_package(PahoMqttCpp REQUIRED)
 set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
 
 # Filesystem
-# This adds support for GCC vesions before 9.0.0, which is required for ROS Melodic.
+# This adds support for std::filesystem in GCC < 9, which is required to support ROS Melodic.
 include(cmake/modules/filesystem.cmake)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
