@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR) # Policy CMP0079.
 project(mqtt_client)
 
 ## Compile as C++17
@@ -22,6 +22,9 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(PahoMqttCpp REQUIRED)
 set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
 
+# Filesystem
+# This adds support for GCC vesions before 9.0.0, which is required for ROS Melodic.
+include(cmake/modules/filesystem.cmake)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -157,6 +160,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${PahoMqttCpp_LIBRARIES}
+  ghc::filesystem
 )
 
 #############

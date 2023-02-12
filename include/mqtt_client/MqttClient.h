@@ -36,7 +36,7 @@ SOFTWARE.
 #endif
 #endif
   #ifndef GHC_USE_STD_FS
-  #include "ghc/filesystem.hpp"
+  #include <ghc/filesystem.hpp>
   namespace fs = ghc::filesystem;
 #endif
 
