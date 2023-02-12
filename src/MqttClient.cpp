@@ -359,19 +359,19 @@ bool MqttClient::loadParameter(const std::string& key, std::string& value,
 }
 
 
-filesystem::path MqttClient::resolvePath(const std::string& path_string) {
+fs::path MqttClient::resolvePath(const std::string& path_string) {
 
-  filesystem::path path(path_string);
+  fs::path path(path_string);
   if (path_string.empty()) return path;
   if (!path.has_root_path()) {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
     if (ros_home.empty())
-      ros_home = std::string(filesystem::current_path());
-    path = filesystem::path(ros_home);
+      ros_home = std::string(fs::current_path());
+    path = fs::path(ros_home);
     path.append(path_string);
   }
-  if (!filesystem::exists(path))
+  if (!fs::exists(path))
     NODELET_WARN("Requested path '%s' does not exist",
                  std::string(path).c_str());
   return path;

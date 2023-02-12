@@ -24,17 +24,20 @@ SOFTWARE.
 ==============================================================================
 */
 
-
 #pragma once
 
 // GCC 7 doesn't support std::filesystem.
 // This is needed to support ROS Melodic.
-#if __GNUC__ < 8
-  #include "filesystem.hpp"
-  namespace filesystem = ghc::filesystem;
-#else
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || (defined(__cplusplus) && __cplusplus >= 201703L)) && defined(__has_include)
+#if __has_include(<filesystem>) && (!defined(__MAC_OS_X_VERSION_MIN_REQUIRED) || __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500)
+  #define GHC_USE_STD_FS
   #include <filesystem>
-  namespace filesystem = std::filesystem;
+  namespace fs = std::filesystem;
+#endif
+#endif
+  #ifndef GHC_USE_STD_FS
+  #include "ghc/filesystem.hpp"
+  namespace fs = ghc::filesystem;
 #endif
 
 #include <map>
@@ -175,9 +178,9 @@ class MqttClient : public nodelet::Nodelet,
    *
    * @param   path_string  (relative) path as string
    *
-   * @return  filesystem::path  path variable
+   * @return  fs::path  path variable
    */
-  filesystem::path resolvePath(const std::string& path_string);
+  fs::path resolvePath(const std::string& path_string);
 
   /**
    * @brief Initializes broker connection and subscriptions.
@@ -344,7 +347,7 @@ class MqttClient : public nodelet::Nodelet,
     std::string pass;  ///< password
     struct {
       bool enabled;  ///< whether to connect via SSL/TLS
-      filesystem::path
+      fs::path
         ca_certificate;  ///< public CA certificate trusted by client
     } tls;               ///< SSL/TLS-related variables
   };
@@ -357,7 +360,7 @@ class MqttClient : public nodelet::Nodelet,
     struct {
       bool enabled;                     ///< whether client buffer is enabled
       int size;                         ///< client buffer size
-      filesystem::path directory;  ///< client buffer directory
+      fs::path directory;  ///< client buffer directory
     } buffer;                           ///< client buffer-related variables
     struct {
       std::string topic;         ///< last-will topic
@@ -369,8 +372,8 @@ class MqttClient : public nodelet::Nodelet,
     double keep_alive_interval;  ///< keep-alive interval
     int max_inflight;            ///< maximum number of inflight messages
     struct {
-      filesystem::path certificate;         ///< client certificate
-      filesystem::path key;                 ///< client private keyfile
+      fs::path certificate;         ///< client certificate
+      fs::path key;                 ///< client private keyfile
       std::string password;                 ///< decryption password for private key
       int version;                          ///< TLS version
       bool verify;                          ///< Verify the client should conduct post-connect checks
