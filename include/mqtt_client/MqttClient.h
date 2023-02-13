@@ -24,10 +24,22 @@ SOFTWARE.
 ==============================================================================
 */
 
-
 #pragma once
 
-#include <filesystem>
+// GCC 7 doesn't support std::filesystem.
+// This is needed to support ROS Melodic.
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || (defined(__cplusplus) && __cplusplus >= 201703L)) && defined(__has_include)
+#if __has_include(<filesystem>) && (!defined(__MAC_OS_X_VERSION_MIN_REQUIRED) || __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500)
+  #define GHC_USE_STD_FS
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#endif
+#endif
+  #ifndef GHC_USE_STD_FS
+  #include <ghc/filesystem.hpp>
+  namespace fs = ghc::filesystem;
+#endif
+
 #include <map>
 #include <memory>
 #include <string>
@@ -37,7 +49,7 @@ SOFTWARE.
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
 #include <topic_tools/shape_shifter.h>
-
+#include <rosfmt/full.h>
 
 /**
  * @brief Namespace for the mqtt_client package
@@ -126,6 +138,37 @@ class MqttClient : public nodelet::Nodelet,
   template <typename T>
   bool loadParameter(const std::string& key, T& value, const T& default_value);
 
+
+  /**
+   * @brief Loads requested ROS parameter from parameter server.
+   *
+   * @tparam  T            type (one of int, double, bool)
+   *
+   * @param[in]   key      parameter name
+   * @param[out]  value    variable where to store the retrieved parameter
+   *
+   * @return  true         if parameter was successfully retrieved
+   * @return  false        if parameter was not found
+   */
+  template <typename T>
+  bool loadParameter(const std::string& key, std::vector<T>& value);
+
+  /**
+   * @brief Loads requested ROS parameter from parameter server, allows default
+   * value.
+   *
+   * @tparam  T            type (one of int, double, bool)
+   *
+   * @param[in]   key            parameter name
+   * @param[out]  value          variable where to store the retrieved parameter
+   * @param[in]   default_value  default value
+   *
+   * @return  true         if parameter was successfully retrieved
+   * @return  false        if parameter was not found or default was used
+   */
+  template <typename T>
+  bool loadParameter(const std::string& key, std::vector<T>& value, const std::vector<T>& default_value);
+
   /**
    * @brief Converts a string to a path object resolving paths relative to
    * ROS_HOME.
@@ -135,9 +178,9 @@ class MqttClient : public nodelet::Nodelet,
    *
    * @param   path_string  (relative) path as string
    *
-   * @return  std::filesystem::path  path variable
+   * @return  fs::path  path variable
    */
-  std::filesystem::path resolvePath(const std::string& path_string);
+  fs::path resolvePath(const std::string& path_string);
 
   /**
    * @brief Initializes broker connection and subscriptions.
@@ -303,8 +346,8 @@ class MqttClient : public nodelet::Nodelet,
     std::string user;  ///< username
     std::string pass;  ///< password
     struct {
-      bool enabled;  ///< whether to connect via SSL/TLS
-      std::filesystem::path
+      bool enabled;      ///< whether to connect via SSL/TLS
+      fs::path
         ca_certificate;  ///< public CA certificate trusted by client
     } tls;               ///< SSL/TLS-related variables
   };
@@ -315,10 +358,10 @@ class MqttClient : public nodelet::Nodelet,
   struct ClientConfig {
     std::string id;  ///< client unique ID
     struct {
-      bool enabled;                     ///< whether client buffer is enabled
-      int size;                         ///< client buffer size
-      std::filesystem::path directory;  ///< client buffer directory
-    } buffer;                           ///< client buffer-related variables
+      bool enabled;        ///< whether client buffer is enabled
+      int size;            ///< client buffer size
+      fs::path directory;  ///< client buffer directory
+    } buffer;              ///< client buffer-related variables
     struct {
       std::string topic;         ///< last-will topic
       std::string message;       ///< last-will message
@@ -329,10 +372,14 @@ class MqttClient : public nodelet::Nodelet,
     double keep_alive_interval;  ///< keep-alive interval
     int max_inflight;            ///< maximum number of inflight messages
     struct {
-      std::filesystem::path certificate;  ///< client certificate
-      std::filesystem::path key;          ///< client private keyfile
-      std::string password;  ///< decryption password for private key
-    } tls;                   ///< SSL/TLS-related variables
+      fs::path certificate;                  ///< client certificate
+      fs::path key;                          ///< client private keyfile
+      std::string password;                  ///< decryption password for private key
+      int version;                           ///< TLS version
+      bool verify;                           ///< Verify the client should conduct
+                                             ///< post-connect checks
+      std::vector<std::string> alpn_protos;  ///< list of ALPN protocols
+    } tls;                                   ///< SSL/TLS-related variables
   };
 
   /**
@@ -441,7 +488,7 @@ class MqttClient : public nodelet::Nodelet,
 
 template <typename T>
 bool MqttClient::loadParameter(const std::string& key, T& value) {
-  bool found = private_node_handle_.getParam(key, value);
+  const bool found = private_node_handle_.getParam(key, value);
   if (found)
     NODELET_DEBUG("Retrieved parameter '%s' = '%s'", key.c_str(),
                   std::to_string(value).c_str());
@@ -452,13 +499,37 @@ bool MqttClient::loadParameter(const std::string& key, T& value) {
 template <typename T>
 bool MqttClient::loadParameter(const std::string& key, T& value,
                                const T& default_value) {
-  bool found = private_node_handle_.param<T>(key, value, default_value);
+  const bool found = private_node_handle_.param<T>(key, value, default_value);
   if (!found)
     NODELET_WARN("Parameter '%s' not set, defaulting to '%s'", key.c_str(),
                  std::to_string(default_value).c_str());
   if (found)
     NODELET_DEBUG("Retrieved parameter '%s' = '%s'", key.c_str(),
                   std::to_string(value).c_str());
+  return found;
+}
+
+template <typename T>
+bool MqttClient::loadParameter(const std::string& key, std::vector<T>& value)
+{
+  const bool found = private_node_handle_.getParam(key, value);
+  if (found)
+    NODELET_DEBUG("Retrieved parameter '%s' = '[%s]'", key.c_str(),
+                  fmt::format("{}", fmt::join(value, ", ")).c_str());
+  return found;
+}
+
+template <typename T>
+bool MqttClient::loadParameter(const std::string& key, std::vector<T>& value,
+                               const std::vector<T>& default_value)
+{
+  const bool found = private_node_handle_.param<T>(key, value, default_value);
+  if (!found)
+    NODELET_WARN("Parameter '%s' not set, defaulting to '%s'", key.c_str(),
+                  fmt::format("{}", fmt::join(value, ", ")).c_str());
+  if (found)
+    NODELET_DEBUG("Retrieved parameter '%s' = '%s'", key.c_str(),
+                  fmt::format("{}", fmt::join(value, ", ")).c_str());
   return found;
 }
 

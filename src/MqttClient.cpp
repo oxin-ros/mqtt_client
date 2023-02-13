@@ -195,6 +195,9 @@ void MqttClient::loadParameters() {
       loadParameter("client/tls/key", client_tls_key);
       loadParameter("client/tls/password", client_config_.tls.password);
     }
+    loadParameter("client/tls/version", client_config_.tls.version);
+    loadParameter("client/tls/verify", client_config_.tls.verify);
+    loadParameter("client/tls/alpn_protos", client_config_.tls.alpn_protos);
   }
 
   // resolve filepaths
@@ -356,19 +359,19 @@ bool MqttClient::loadParameter(const std::string& key, std::string& value,
 }
 
 
-std::filesystem::path MqttClient::resolvePath(const std::string& path_string) {
+fs::path MqttClient::resolvePath(const std::string& path_string) {
 
-  std::filesystem::path path(path_string);
+  fs::path path(path_string);
   if (path_string.empty()) return path;
   if (!path.has_root_path()) {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
     if (ros_home.empty())
-      ros_home = std::string(std::filesystem::current_path());
-    path = std::filesystem::path(ros_home);
+      ros_home = std::string(fs::current_path());
+    path = fs::path(ros_home);
     path.append(path_string);
   }
-  if (!std::filesystem::exists(path))
+  if (!fs::exists(path))
     NODELET_WARN("Requested path '%s' does not exist",
                  std::string(path).c_str());
   return path;
@@ -434,13 +437,15 @@ void MqttClient::setupClient() {
       if (!client_config_.tls.password.empty())
         ssl.set_private_key_password(client_config_.tls.password);
     }
+    ssl.set_ssl_version(client_config_.tls.version);
+    ssl.set_verify(client_config_.tls.verify);
+    ssl.set_alpn_protos(client_config_.tls.alpn_protos);
     connect_options_.set_ssl(ssl);
   }
 
   // create MQTT client
-  std::string protocol = broker_config_.tls.enabled ? "ssl" : "tcp";
-  std::string uri = protocol + std::string("://") + broker_config_.host +
-                    std::string(":") + std::to_string(broker_config_.port);
+  const std::string protocol = broker_config_.tls.enabled ? "ssl" : "tcp";
+  const auto uri = fmt::format("{}://{}:{}", protocol, broker_config_.host, broker_config_.port);
   try {
     if (client_config_.buffer.enabled) {
       client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
@@ -499,7 +504,7 @@ void MqttClient::ros2mqtt(const topic_tools::ShapeShifter::ConstPtr& ros_msg,
     // resolve ROS messages to primitive strings if possible, else serialize
     // entire message to string
     std::string payload;
-    bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
+    const bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
     if (found_primitive)
       payload_buffer = std::vector<uint8_t>(payload.begin(), payload.end());
     else
@@ -678,7 +683,7 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
                    ::tolower);
     if (bool_str == "true" || bool_str == "false") {
 
-      bool bool_msg = (bool_str == "true");
+      const bool bool_msg = (bool_str == "true");
 
       // construct and serialize ROS message
       std_msgs::Bool msg;

@@ -59,6 +59,7 @@
   <depend>nodelet</depend>
   <depend>paho-mqtt-cpp</depend>
   <depend>roscpp</depend>
+  <depend>rosfmt</depend>
   <depend>std_msgs</depend>
   <depend>topic_tools</depend>
   <exec_depend>message_runtime</exec_depend>
