@@ -52,7 +52,7 @@ set(GHC_FILESYSTEM_TEST_CODE [[
 
 
 # Try to compile a simple filesystem program without any linker flags
-INCLUDE(CheckCXXSourceCompiles)
+include(CheckCXXSourceCompiles)
 list(APPEND CMAKE_REQUIRED_INCLUDES "${filesystem_SOURCE_DIR}/include")
 check_cxx_source_compiles("${GHC_FILESYSTEM_TEST_CODE}" GHC_FILESYSTEM_NO_LINK_NEEDED)
 

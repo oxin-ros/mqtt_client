@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR) # Policy CMP0079.
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR) # Policy CMP0079 & FetchContent_MakeAvailable.
 project(mqtt_client)
 
 ## Compile as C++17
@@ -22,8 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(PahoMqttCpp REQUIRED)
 set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
 
-# Filesystem
-# This adds support for std::filesystem in GCC < 9, which is required to support ROS Melodic.
+## This adds support for std::filesystem in GCC < 9, which is required to support ROS Melodic.
 include(cmake/modules/filesystem.cmake)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -159,7 +158,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
-  ${PahoMqttCpp_LIBRARIES}
+  PahoMqttCpp::paho-mqttpp3
   ghc::filesystem
 )
 
