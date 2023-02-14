@@ -3,6 +3,7 @@ Changelog for package mqtt_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1.2.0 (2023-02-15)
+------------------
 * Merge pull request #1 from oxin-ros/feat/aws-tls-support
   - Adds support for ALPN protocol names, which is used by AWS IoT Core.
   - Adds support for GCC < 9 by using `https://github.com/gulrak/filesystem` to add support for std::filesystem API.
