@@ -28,6 +28,7 @@ SOFTWARE.
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <vector>
 
 #include <mqtt_client/MqttClient.h>
@@ -216,6 +217,13 @@ void MqttClient::loadParameters() {
   // parse bridge parameters
   try {
 
+    // Check if the prefix was provided.
+    std::optional<std::string> mqtt_topic_prefix {std::nullopt};
+    if (bridge.hasMember("mqtt_topic_prefix"))
+    {
+      mqtt_topic_prefix = bridge["mqtt_topic_prefix"];
+    }
+
     // ros2mqtt
     if (bridge.hasMember("ros2mqtt")) {
 
@@ -229,7 +237,17 @@ void MqttClient::loadParameters() {
           // ros2mqtt[k]/ros_topic and ros2mqtt[k]/mqtt_topic
           std::string& ros_topic = ros2mqtt_params[k]["ros_topic"];
           Ros2MqttInterface& ros2mqtt = ros2mqtt_[ros_topic];
-          ros2mqtt.mqtt.topic = std::string(ros2mqtt_params[k]["mqtt_topic"]);
+
+          // Prepend the mqtt topic prefix if available.
+          const auto mqtt_topic = std::string(ros2mqtt_params[k]["mqtt_topic"]);
+          if (mqtt_topic_prefix.has_value())
+          {
+            ros2mqtt.mqtt.topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
+          }
+          else
+          {
+            ros2mqtt.mqtt.topic = mqtt_topic;
+          }
 
           // ros2mqtt[k]/primitive
           if (ros2mqtt_params[k].hasMember("primitive"))
@@ -286,8 +304,14 @@ void MqttClient::loadParameters() {
         if (mqtt2ros_params[k].hasMember("mqtt_topic") &&
             mqtt2ros_params[k].hasMember("ros_topic")) {
 
+          // Prepend the mqtt topic prefix if available.
+          auto mqtt_topic = std::string(mqtt2ros_params[k]["mqtt_topic"]);
+          if (mqtt_topic_prefix.has_value())
+          {
+            mqtt_topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
+          }
+
           // mqtt2ros[k]/mqtt_topic and mqtt2ros[k]/ros_topic
-          std::string& mqtt_topic = mqtt2ros_params[k]["mqtt_topic"];
           Mqtt2RosInterface& mqtt2ros = mqtt2ros_[mqtt_topic];
           mqtt2ros.ros.topic = std::string(mqtt2ros_params[k]["ros_topic"]);
 
