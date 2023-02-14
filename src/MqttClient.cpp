@@ -31,6 +31,8 @@ SOFTWARE.
 #include <optional>
 #include <vector>
 
+#include <json_msgs/Json.h>
+#include <json_transport/json_transport.hpp>
 #include <mqtt_client/MqttClient.h>
 #include <mqtt_client/RosMsgType.h>
 #include <pluginlib/class_list_macros.h>
@@ -50,7 +52,6 @@ SOFTWARE.
 #include <std_msgs/UInt8.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
-
 
 PLUGINLIB_EXPORT_CLASS(mqtt_client::MqttClient, nodelet::Nodelet)
 
@@ -86,6 +87,7 @@ const std::string MqttClient::kLatencyRosTopicPrefix = "latencies/";
  *   std_msgs/Int64
  *   std_msgs/Float32
  *   std_msgs/Float64
+ *   json_msgs/Json
  *
  * @param [in]  msg        generic ShapeShifter ROS message
  * @param [out] primitive  string representation of primitive message data
@@ -137,6 +139,9 @@ bool primitiveRosMessageToString(const topic_tools::ShapeShifter::ConstPtr& msg,
   } else if (msg_type_md5 ==
              ros::message_traits::MD5Sum<std_msgs::Float64>::value()) {
     primitive = std::to_string(msg->instantiate<std_msgs::Float64>()->data);
+  } else if (msg_type_md5 ==
+             ros::message_traits::MD5Sum<json_msgs::Json>::value()) {
+    primitive = msg->instantiate<json_msgs::Json>()->json;
   } else {
     found_primitive = false;
   }
@@ -772,6 +777,33 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
       }
     } catch (const std::invalid_argument& ex) {
     } catch (const std::out_of_range& ex) {
+    }
+  }
+
+  // Check for JSON formatted string.
+  if (!found_primitive) {
+    // Parse the string to see if it's a valid JSON object.
+    constexpr bool NO_EXCEPTIONS = false;
+    const auto json_str = json_transport::json_t::parse(
+      str_msg,
+      nullptr,
+      NO_EXCEPTIONS);
+
+    // Check if it's valid JSON.
+    if (!json_str.is_discarded())
+    {
+      // Construct and serialize the ROS message.
+      const auto msg = json_transport::pack(json_str);
+      serializeRosMessage(msg, msg_buffer);
+
+      // Collect ROS message type information.
+      msg_type_md5 = ros::message_traits::MD5Sum<json_msgs::Json>::value();
+      msg_type_name =
+        ros::message_traits::DataType<json_msgs::Json>::value();
+      msg_type_definition =
+        ros::message_traits::Definition<json_msgs::Json>::value();
+
+      found_primitive = true;
     }
   }
 

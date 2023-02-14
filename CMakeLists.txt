@@ -10,12 +10,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  json_msgs
+  json_transport
   message_generation
   nodelet
   roscpp
+  rosfmt
   std_msgs
   topic_tools
-  rosfmt
 )
 
 ## System dependencies are found with CMake's conventions
@@ -111,9 +113,12 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
+    json_msgs
+    json_transport
     message_runtime
     nodelet
     roscpp
+    rosfmt
     std_msgs
     topic_tools
   DEPENDS PahoMqttCpp
