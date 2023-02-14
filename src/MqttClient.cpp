@@ -173,6 +173,7 @@ void MqttClient::loadParameters() {
   // load client parameters from parameter server
   std::string client_buffer_directory, client_tls_certificate, client_tls_key;
   loadParameter("client/id", client_config_.id, "");
+  loadParameter("client/version", client_config_.version, MQTTVERSION_DEFAULT);
   client_config_.buffer.enabled = !client_config_.id.empty();
   if (client_config_.buffer.enabled) {
     loadParameter("client/buffer/size", client_config_.buffer.size, 0);
@@ -436,6 +437,9 @@ void MqttClient::setupClient() {
   connect_options_.set_keep_alive_interval(client_config_.keep_alive_interval);
   connect_options_.set_max_inflight(client_config_.max_inflight);
 
+  // Set the MQTT version for the connection.
+  connect_options_.set_mqtt_version(client_config_.version);
+
   // user authentication
   if (!broker_config_.user.empty()) {
     connect_options_.set_user_name(broker_config_.user);
@@ -471,9 +475,29 @@ void MqttClient::setupClient() {
   const std::string protocol = broker_config_.tls.enabled ? "ssl" : "tcp";
   const auto uri = fmt::format("{}://{}:{}", protocol, broker_config_.host, broker_config_.port);
   try {
+    if (client_config_.version != MQTTVERSION_DEFAULT) {
+      if (client_config_.buffer.enabled) {
+        NODELET_INFO("CREATING CLIENT WITH MQTT 5 & BUFFER.");
+        mqtt::create_options opts(client_config_.version, client_config_.buffer.size);
+        client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
+          uri,
+          client_config_.id,
+          opts,
+          client_config_.buffer.directory));
+      }
+      else {
+        NODELET_INFO("CREATING CLIENT WITH MQTT 5.");
+        client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
+          uri,
+          client_config_.id,
+          mqtt::create_options(client_config_.version)));
+      }
+    }
     if (client_config_.buffer.enabled) {
       client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
-        uri, client_config_.id, client_config_.buffer.size,
+        uri,
+        client_config_.id,
+        client_config_.buffer.size,
         client_config_.buffer.directory));
     } else {
       client_ = std::shared_ptr<mqtt::async_client>(

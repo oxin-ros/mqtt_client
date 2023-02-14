@@ -357,6 +357,11 @@ class MqttClient : public nodelet::Nodelet,
    */
   struct ClientConfig {
     std::string id;  ///< client unique ID
+    int version;     ///< MQTT version:
+                     ///< MQTTVERSION_DEFAULT (0)
+                     ///< MQTTVERSION_3_1 (3)
+                     ///< MQTTVERSION_3_1_1 (4)
+                     ///< MQTTVERSION_5 (5)
     struct {
       bool enabled;        ///< whether client buffer is enabled
       int size;            ///< client buffer size
