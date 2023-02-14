@@ -2,6 +2,20 @@
 Changelog for package mqtt_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.0 (2023-02-15)
+------------------
+* Merge pull request #1 from oxin-ros/feat/aws-tls-support
+  - Adds support for ALPN protocol names, which is used by AWS IoT Core.
+  - Adds support for GCC < 9 by using `https://github.com/gulrak/filesystem` to add support for std::filesystem API.
+  - Adds support for YAML array parameter loading.
+* Merge pull request #2 from oxin-ros/fix/paho-mqtt-cpp-rosdep-melodic
+  - Fixes the catkin build for ROS Melodic.
+* Merge pull request #3 from oxin-ros/feat/add-mqtt-prefix
+  - Adds support for specifying a common MQTT topic prefix across all the MQTT topics.
+* Merge pull request #4 from oxin-ros/feat/add-json-support
+  - Adds support for json_msgs::Json types through a primitive MQTT topic.
+* Contributors: David B.
+
 1.1.0 (2022-10-13)
 ------------------
 * Merge pull request #6 from ika-rwth-aachen/feature/primitive-msgs
