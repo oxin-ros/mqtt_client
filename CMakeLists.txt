@@ -20,6 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   topic_tools
 )
 
+find_package(utf8cpp REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 find_package(PahoMqttCpp REQUIRED)
 set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)

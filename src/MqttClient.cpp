@@ -50,8 +50,10 @@ SOFTWARE.
 #include <std_msgs/UInt32.h>
 #include <std_msgs/UInt64.h>
 #include <std_msgs/UInt8.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
+#include "utf8cpp/utf8.h"
 
 PLUGINLIB_EXPORT_CLASS(mqtt_client::MqttClient, nodelet::Nodelet)
 
@@ -142,6 +144,9 @@ bool primitiveRosMessageToString(const topic_tools::ShapeShifter::ConstPtr& msg,
   } else if (msg_type_md5 ==
              ros::message_traits::MD5Sum<json_msgs::Json>::value()) {
     primitive = msg->instantiate<json_msgs::Json>()->json;
+  } else if (msg_type_md5 ==
+             ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value()) {
+    primitive = fmt::format("{}", fmt::join(msg->instantiate<std_msgs::UInt8MultiArray>()->data, ""));
   } else {
     found_primitive = false;
   }
@@ -780,6 +785,29 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
     }
   }
 
+  // Check for non UTF-8 encoded string.
+  if (!found_primitive) {
+    // Check for non-UTF-8 characters.
+    const bool is_valid_utf8 = utf8::is_valid(str_msg);
+    if (!is_valid_utf8) {
+      // Construct and serialize the ROS message.
+      std_msgs::UInt8MultiArray msg;
+      std::copy(
+        std::begin(str_msg),
+        std::end(str_msg),
+        std::back_inserter(msg.data));
+      serializeRosMessage(msg, msg_buffer);
+
+      // collect ROS message type information
+      msg_type_md5 = ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value();
+      msg_type_name = ros::message_traits::DataType<std_msgs::UInt8MultiArray>::value();
+      msg_type_definition =
+        ros::message_traits::Definition<std_msgs::UInt8MultiArray>::value();
+
+      found_primitive = true;
+    }
+  }
+
   // Check for JSON formatted string.
   if (!found_primitive) {
     // Parse the string to see if it's a valid JSON object.
@@ -790,8 +818,7 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
       NO_EXCEPTIONS);
 
     // Check if it's valid JSON.
-    if (!json_str.is_discarded())
-    {
+    if (!json_str.is_discarded()) {
       // Construct and serialize the ROS message.
       const auto msg = json_transport::pack(json_str);
       serializeRosMessage(msg, msg_buffer);
@@ -809,8 +836,7 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
 
   // fall back to string
   if (!found_primitive) {
-
-    // construct and serialize ROS message
+    // Construct and serialize ROS message
     std_msgs::String msg;
     msg.data = str_msg;
     serializeRosMessage(msg, msg_buffer);
