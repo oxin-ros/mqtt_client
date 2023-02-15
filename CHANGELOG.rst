@@ -2,6 +2,12 @@
 Changelog for package mqtt_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.1 (2023-02-16)
+------------------
+* Merge pull request #6 from oxin-ros/feat/add-support-for-utf8-decoding
+  - Adds support for bistream types based on utf-8 encoding of MQTT message payload.
+* Contributors: David B.
+
 1.2.0 (2023-02-15)
 ------------------
 * Merge pull request #1 from oxin-ros/feat/aws-tls-support
