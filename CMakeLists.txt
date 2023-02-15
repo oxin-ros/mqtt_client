@@ -20,12 +20,21 @@ find_package(catkin REQUIRED COMPONENTS
   topic_tools
 )
 
+
 ## System dependencies are found with CMake's conventions
 find_package(PahoMqttCpp REQUIRED)
 set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
+find_package(utf8cpp REQUIRED)
 
 ## This adds support for std::filesystem in GCC < 9, which is required to support ROS Melodic.
 include(cmake/modules/filesystem.cmake)
+
+## Save a list of all the external C++ libraries.
+set(external_LIBRARIES
+  PahoMqttCpp::paho-mqttpp3
+  ghc::filesystem
+  utf8::cpp
+)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -158,13 +167,15 @@ add_library(${PROJECT_NAME}
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
-  PahoMqttCpp::paho-mqttpp3
-  ghc::filesystem
+  ${external_LIBRARIES}
 )
 
 #############

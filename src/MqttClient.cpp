@@ -50,8 +50,10 @@ SOFTWARE.
 #include <std_msgs/UInt32.h>
 #include <std_msgs/UInt64.h>
 #include <std_msgs/UInt8.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
+#include "utf8cpp/utf8.h"
 
 PLUGINLIB_EXPORT_CLASS(mqtt_client::MqttClient, nodelet::Nodelet)
 
@@ -88,6 +90,7 @@ const std::string MqttClient::kLatencyRosTopicPrefix = "latencies/";
  *   std_msgs/Float32
  *   std_msgs/Float64
  *   json_msgs/Json
+ *   std_msgs::UInt8MultiArray
  *
  * @param [in]  msg        generic ShapeShifter ROS message
  * @param [out] primitive  string representation of primitive message data
@@ -142,6 +145,9 @@ bool primitiveRosMessageToString(const topic_tools::ShapeShifter::ConstPtr& msg,
   } else if (msg_type_md5 ==
              ros::message_traits::MD5Sum<json_msgs::Json>::value()) {
     primitive = msg->instantiate<json_msgs::Json>()->json;
+  } else if (msg_type_md5 ==
+             ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value()) {
+    primitive = fmt::format("{}", fmt::join(msg->instantiate<std_msgs::UInt8MultiArray>()->data, ""));
   } else {
     found_primitive = false;
   }
@@ -423,7 +429,6 @@ void MqttClient::setup() {
   for (auto& ros2mqtt_p : ros2mqtt_) {
     const std::string& ros_topic = ros2mqtt_p.first;
     Ros2MqttInterface& ros2mqtt = ros2mqtt_p.second;
-    const std::string& mqtt_topic = ros2mqtt.mqtt.topic;
     ros2mqtt.ros.subscriber =
       private_node_handle_.subscribe<topic_tools::ShapeShifter>(
         ros_topic, ros2mqtt.ros.queue_size,
@@ -438,7 +443,9 @@ void MqttClient::setupClient() {
   // basic client connection options
   connect_options_.set_automatic_reconnect(true);
   connect_options_.set_clean_session(client_config_.clean_session);
-  connect_options_.set_keep_alive_interval(client_config_.keep_alive_interval);
+  // Cast the keep alive interval to an int, since that's what the interface requires.
+  // TODO: evaluate whether this should be an int in the config struct.
+  connect_options_.set_keep_alive_interval(static_cast<int>(client_config_.keep_alive_interval));
   connect_options_.set_max_inflight(client_config_.max_inflight);
 
   // user authentication
@@ -780,6 +787,29 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
     }
   }
 
+  // Check for non UTF-8 encoded string.
+  if (!found_primitive) {
+    // Check for non-UTF-8 characters.
+    const bool is_valid_utf8 = utf8::is_valid(str_msg);
+    if (!is_valid_utf8) {
+      // Construct and serialize the ROS message.
+      std_msgs::UInt8MultiArray msg;
+      std::copy(
+        std::begin(str_msg),
+        std::end(str_msg),
+        std::back_inserter(msg.data));
+      serializeRosMessage(msg, msg_buffer);
+
+      // collect ROS message type information
+      msg_type_md5 = ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value();
+      msg_type_name = ros::message_traits::DataType<std_msgs::UInt8MultiArray>::value();
+      msg_type_definition =
+        ros::message_traits::Definition<std_msgs::UInt8MultiArray>::value();
+
+      found_primitive = true;
+    }
+  }
+
   // Check for JSON formatted string.
   if (!found_primitive) {
     // Parse the string to see if it's a valid JSON object.
@@ -790,8 +820,7 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
       NO_EXCEPTIONS);
 
     // Check if it's valid JSON.
-    if (!json_str.is_discarded())
-    {
+    if (!json_str.is_discarded()) {
       // Construct and serialize the ROS message.
       const auto msg = json_transport::pack(json_str);
       serializeRosMessage(msg, msg_buffer);
@@ -809,8 +838,7 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
 
   // fall back to string
   if (!found_primitive) {
-
-    // construct and serialize ROS message
+    // Construct and serialize ROS message
     std_msgs::String msg;
     msg.data = str_msg;
     serializeRosMessage(msg, msg_buffer);
@@ -840,7 +868,10 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
   }
 
   // publish via ShapeShifter
-  ros::serialization::OStream msg_stream(msg_buffer.data(), msg_buffer.size());
+  // The `ros::serialization::OStream` constructor takes a uint32_t type for the length of the buffer,
+  // whereas the buffer object returns a size_type (i.e. size_t). Explicitly cast to uint32_t to avoid
+  // a warning message and since this buffer is expected to have a non-negative size.
+  ros::serialization::OStream msg_stream(msg_buffer.data(), static_cast<uint32_t>(msg_buffer.size()));
   NODELET_DEBUG(
     "Sending ROS message of type '%s' from MQTT broker to ROS topic '%s' ...",
     mqtt2ros.ros.shape_shifter.getDataType().c_str(),
