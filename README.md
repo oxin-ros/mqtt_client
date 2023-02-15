@@ -216,6 +216,7 @@ client:
 
 ```yaml
 bridge:
+  mqtt_topic_prefix:   # This prefix is prepended to all the MQTT topics for a given `mqtt_client`.
   ros2mqtt:            # array specifying which ROS topics to map to which MQTT topics
     - ros_topic:         # ROS topic whose messages are transformed to MQTT messages
       mqtt_topic:        # MQTT topic on which the corresponding ROS messages are sent to the broker
