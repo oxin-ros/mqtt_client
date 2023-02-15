@@ -90,6 +90,7 @@ const std::string MqttClient::kLatencyRosTopicPrefix = "latencies/";
  *   std_msgs/Float32
  *   std_msgs/Float64
  *   json_msgs/Json
+ *   std_msgs::UInt8MultiArray
  *
  * @param [in]  msg        generic ShapeShifter ROS message
  * @param [out] primitive  string representation of primitive message data

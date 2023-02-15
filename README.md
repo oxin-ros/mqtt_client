@@ -10,16 +10,29 @@
 
 The *mqtt_client* package provides a ROS nodelet that enables connected ROS-based devices or robots to exchange ROS messages via an MQTT broker using the [MQTT](http://mqtt.org) protocol. This works generically for arbitrary ROS message types. The *mqtt_client* can also exchange primitive messages with MQTT clients running on devices not based on ROS.
 
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Quick Start](#quick-start)
-  - [Launch](#launch)
-  - [Configuration](#configuration)
-- [Primitive Messages](#primitive-messages)
-- [Latency Computation](#latency-computation)
-- [Package Summary](#package-summary)
-- [How It Works](#how-it-works)
-- [Acknowledgements](#acknowledgements)
+- [mqtt\_client](#mqtt_client)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Quick Start](#quick-start)
+      - [Demo Broker](#demo-broker)
+      - [Demo Configuration](#demo-configuration)
+      - [Demo Client Launch](#demo-client-launch)
+    - [Launch](#launch)
+    - [Configuration](#configuration)
+      - [Broker Parameters](#broker-parameters)
+      - [Client Parameters](#client-parameters)
+      - [Bridge Parameters](#bridge-parameters)
+  - [Primitive Messages](#primitive-messages)
+  - [Latency Computation](#latency-computation)
+  - [Package Summary](#package-summary)
+    - [Nodelets](#nodelets)
+      - [`mqtt_client/MqttClient`](#mqtt_clientmqttclient)
+        - [Subscribed Topics](#subscribed-topics)
+        - [Published Topics](#published-topics)
+        - [Services](#services)
+        - [Parameters](#parameters)
+  - [How It Works](#how-it-works)
+  - [Acknowledgements](#acknowledgements)
 
 ## Installation
 
@@ -97,8 +110,8 @@ roslaunch mqtt_client standalone.launch
 [ WARN] [1665575657.360300703]: Parameter 'client/clean_session' not set, defaulting to '1'
 [ WARN] [1665575657.360576344]: Parameter 'client/keep_alive_interval' not set, defaulting to '60.000000'
 [ WARN] [1665575657.360847295]: Parameter 'client/max_inflight' not set, defaulting to '65535'
-[ INFO] [1665575657.361281461]: Bridging ROS topic '/ping/ros' to MQTT topic 'pingpong/ros' 
-[ INFO] [1665575657.361303380]: Bridging primitive ROS topic '/ping/primitive' to MQTT topic 'pingpong/primitive' 
+[ INFO] [1665575657.361281461]: Bridging ROS topic '/ping/ros' to MQTT topic 'pingpong/ros'
+[ INFO] [1665575657.361303380]: Bridging primitive ROS topic '/ping/primitive' to MQTT topic 'pingpong/primitive'
 [ INFO] [1665575657.361352809]: Bridging MQTT topic 'pingpong/ros' to ROS topic '/pong/ros'
 [ INFO] [1665575657.361370558]: Bridging MQTT topic 'pingpong/primitive' to primitive ROS topic '/pong/primitive'
 [ INFO] [1665575657.362153083]: Connecting to broker at 'tcp://localhost:1883' ...
@@ -230,9 +243,11 @@ bridge:
 
 As seen in the [Quick Start](#quick-start), the *mqtt_client* can not only exchange arbitrary ROS messages with other *mqtt_clients*, but it can also exchange primitive message data with other non-*mqtt_client* MQTT clients. This allows ROS-based devices to exchange primitive messages with devices not based on ROS. The `primitive` parameter can be set for both ROS-to-MQTT (`bridge/ros2mqtt`) and for MQTT-to-ROS (`bridge/mqtt2ros`) transmissions.
 
-If a ROS-to-MQTT transmission is configured as `primitive`, the ROS message is simply serialized to a string representation, without providing any information on the underlying ROS message type via MQTT. If the ROS message type is one of the supported primitive ROS message types, the encapsulating ROS message components are also removed, s.t. only the raw data is published as a string. The supported primitive ROS message types are [`std_msgs/String`](http://docs.ros.org/en/api/std_msgs/html/msg/String.html), [`std_msgs/Bool`](http://docs.ros.org/en/api/std_msgs/html/msg/Bool.html), [`std_msgs/Char`](http://docs.ros.org/en/api/std_msgs/html/msg/Char.html), [`std_msgs/UInt8`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt8.html), [`std_msgs/UInt16`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt16.html), [`std_msgs/UInt32`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt32.html), [`std_msgs/UInt64`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt16.html), [`std_msgs/Int8`](http://docs.ros.org/en/api/std_msgs/html/msg/Int8.html), [`std_msgs/Int16`](http://docs.ros.org/en/api/std_msgs/html/msg/Int16.html), [`std_msgs/Int32`](http://docs.ros.org/en/api/std_msgs/html/msg/Int32.html), [`std_msgs/Int64`](http://docs.ros.org/en/api/std_msgs/html/msg/Int64.html), [`std_msgs/Float32`](http://docs.ros.org/en/api/std_msgs/html/msg/Float32.html), [`std_msgs/Float32`](http://docs.ros.org/en/api/std_msgs/html/msg/Float64.html).
+If a ROS-to-MQTT transmission is configured as `primitive`, the ROS message is simply serialized to a string representation, without providing any information on the underlying ROS message type via MQTT. If the ROS message type is one of the supported primitive ROS message types, the encapsulating ROS message components are also removed, s.t. only the raw data is published as a string. The supported primitive ROS message types are [`std_msgs/String`](http://docs.ros.org/en/api/std_msgs/html/msg/String.html), [`std_msgs/Bool`](http://docs.ros.org/en/api/std_msgs/html/msg/Bool.html), [`std_msgs/Char`](http://docs.ros.org/en/api/std_msgs/html/msg/Char.html), [`std_msgs/UInt8`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt8.html), [`std_msgs/UInt16`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt16.html), [`std_msgs/UInt32`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt32.html), [`std_msgs/UInt64`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt16.html), [`std_msgs/Int8`](http://docs.ros.org/en/api/std_msgs/html/msg/Int8.html), [`std_msgs/Int16`](http://docs.ros.org/en/api/std_msgs/html/msg/Int16.html), [`std_msgs/Int32`](http://docs.ros.org/en/api/std_msgs/html/msg/Int32.html), [`std_msgs/Int64`](http://docs.ros.org/en/api/std_msgs/html/msg/Int64.html), [`std_msgs/Float32`](http://docs.ros.org/en/api/std_msgs/html/msg/Float32.html), [`std_msgs/Float32`](http://docs.ros.org/en/api/std_msgs/html/msg/Float64.html), [`json_msgs/Json`](https://github.com/locusrobotics/json_transport/blob/devel/json_msgs/msg/Json.msg), [`std_msgs::UInt8MultiArray`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt8MultiArray.html).
 
-If an MQTT-to-ROS transmission is configured as `primitive`, the MQTT message is interpreted and published as a primitive data type, if possible. The message is probed in the following order: `bool` ([`std_msgs/Bool`](http://docs.ros.org/en/api/std_msgs/html/msg/Bool.html)), `int` ([`std_msgs/Int32`](http://docs.ros.org/en/api/std_msgs/html/msg/Int32.html)), `float` ([`std_msgs/Float32`](http://docs.ros.org/en/api/std_msgs/html/msg/Float32.html)), `string` ([`std_msgs/String`](http://docs.ros.org/en/api/std_msgs/html/msg/String.html)).
+If an MQTT-to-ROS transmission is configured as `primitive`, the MQTT message is interpreted and published as a primitive data type, if possible. The message is probed in the following order: `bool` ([`std_msgs/Bool`](http://docs.ros.org/en/api/std_msgs/html/msg/Bool.html)), `int` ([`std_msgs/Int32`](http://docs.ros.org/en/api/std_msgs/html/msg/Int32.html)), `float` ([`std_msgs/Float32`](http://docs.ros.org/en/api/std_msgs/html/msg/Float32.html)), `bitstream` ([`std_msgs::UInt8MultiArray`](http://docs.ros.org/en/api/std_msgs/html/msg/UInt8MultiArray.html)), `json` ([`json_msgs/Json`](https://github.com/locusrobotics/json_transport/blob/devel/json_msgs/msg/Json.msg)), `string` ([`std_msgs/String`](http://docs.ros.org/en/api/std_msgs/html/msg/String.html)).
+
+  ***NOTE***: The `bitstream` type is determined by the presence of non-UTF8 characters in the recieved MQTT message.
 
 ## Latency Computation
 
@@ -264,19 +279,19 @@ Enables connected ROS-based devices or robots to exchange ROS messages via an MQ
 
 ##### Subscribed Topics
 
-- `<bridge/ros2mqtt[*]/ros_topic>` ([`topic_tools/ShapeShifter`](http://wiki.ros.org/topic_tools))  
+- `<bridge/ros2mqtt[*]/ros_topic>` ([`topic_tools/ShapeShifter`](http://wiki.ros.org/topic_tools))
   ROS topic whose messages are transformed to MQTT messages and sent to the MQTT broker. May have arbitrary ROS message type.
 
 ##### Published Topics
 
-- `<bridge/mqtt2ros[*]/ros_topic>` ([`topic_tools/ShapeShifter`](http://wiki.ros.org/topic_tools))  
+- `<bridge/mqtt2ros[*]/ros_topic>` ([`topic_tools/ShapeShifter`](http://wiki.ros.org/topic_tools))
   ROS topic on which MQTT messages received from the MQTT broker are published. May have arbitrary ROS message type.
-- `~/latencies/<bridge/mqtt2ros[*]/ros_topic>` ([`std_msgs/Float64`](https://docs.ros.org/en/api/std_msgs/html/msg/Float64.html))  
+- `~/latencies/<bridge/mqtt2ros[*]/ros_topic>` ([`std_msgs/Float64`](https://docs.ros.org/en/api/std_msgs/html/msg/Float64.html))
   Latencies measured on the message transfer to `<bridge/mqtt2ros[*]/ros_topic>` are published here, if the received messages have a timestamp injected (see [Latency Computation](#latency-computation)).
 
 ##### Services
 
-- `is_connected` ([`mqtt_client/IsConnected`](srv/IsConnected.srv))  
+- `is_connected` ([`mqtt_client/IsConnected`](srv/IsConnected.srv))
   Returns whether the client is connected to the MQTT broker.
 
 ##### Parameters
