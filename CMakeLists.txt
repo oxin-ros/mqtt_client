@@ -20,14 +20,23 @@ find_package(catkin REQUIRED COMPONENTS
   topic_tools
 )
 
+## This adds support for std::filesystem in GCC < 9, which is required to support ROS Melodic.
+include(cmake/modules/filesystem.cmake)
+
+# Add system dependencies.
+include(cmake/CPM.cmake)
+
+# TODO: Investigate using CPM to install mqtt deps.
+# CPMAddPackage("gh:eclipse/paho.mqtt.c@1.3.12")
+# CPMAddPackage("gh:eclipse/paho.mqtt.cpp#2ff3d155dcd10564f1816675789284b4efd79eb7")
+CPMAddPackage(
+  NAME utf8cpp
+  GITHUB_REPOSITORY nemtrif/utfcpp
+  GIT_TAG v3.2.3
+)
 
 ## System dependencies are found with CMake's conventions
 find_package(PahoMqttCpp REQUIRED)
-set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
-find_package(utf8cpp REQUIRED)
-
-## This adds support for std::filesystem in GCC < 9, which is required to support ROS Melodic.
-include(cmake/modules/filesystem.cmake)
 
 ## Save a list of all the external C++ libraries.
 set(external_LIBRARIES
@@ -142,6 +151,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${utf8cpp_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library

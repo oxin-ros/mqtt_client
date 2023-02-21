@@ -53,7 +53,7 @@ SOFTWARE.
 #include <std_msgs/UInt8MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
-#include "utf8cpp/utf8.h"
+#include "utf8.h"
 
 PLUGINLIB_EXPORT_CLASS(mqtt_client::MqttClient, nodelet::Nodelet)
 
