@@ -249,16 +249,18 @@ void MqttClient::loadParameters() {
           std::string& ros_topic = ros2mqtt_params[k]["ros_topic"];
           Ros2MqttInterface& ros2mqtt = ros2mqtt_[ros_topic];
 
-          // Prepend the mqtt topic prefix if available.
-          const auto mqtt_topic = std::string(ros2mqtt_params[k]["mqtt_topic"]);
-          if (mqtt_topic_prefix.has_value())
+          // Get the MQTT topic.
+          auto mqtt_topic = std::string(ros2mqtt_params[k]["mqtt_topic"]);
+
+          // Check if this is an absolute topic name.
+          const auto& first = mqtt_topic.front();
+          const bool is_absolute_topic = ("/" == first);
+          if (!is_absolute_topic && mqtt_topic_prefix.has_value())
           {
-            ros2mqtt.mqtt.topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
+            // Prepend the mqtt topic prefix if available.
+            mqtt_topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
           }
-          else
-          {
-            ros2mqtt.mqtt.topic = mqtt_topic;
-          }
+          ros2mqtt.mqtt.topic = mqtt_topic;
 
           // ros2mqtt[k]/primitive
           if (ros2mqtt_params[k].hasMember("primitive"))
@@ -317,8 +319,10 @@ void MqttClient::loadParameters() {
 
           // Prepend the mqtt topic prefix if available.
           auto mqtt_topic = std::string(mqtt2ros_params[k]["mqtt_topic"]);
-          if (mqtt_topic_prefix.has_value())
+          const bool is_absolute_topic = ("/" == first);
+          if (!is_absolute_topic && mqtt_topic_prefix.has_value())
           {
+            // Prepend the mqtt topic prefix if available.
             mqtt_topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
           }
 
