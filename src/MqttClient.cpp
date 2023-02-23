@@ -262,10 +262,19 @@ void MqttClient::loadParameters() {
           // Check if this is an absolute topic name.
           const char first = mqtt_topic[0];
           const bool is_absolute_topic = ('/' == first);
-          if (!is_absolute_topic && mqtt_topic_prefix.has_value())
+          if (is_absolute_topic)
           {
-            // Prepend the mqtt topic prefix if available.
-            mqtt_topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
+            // Strip the leading '/'.
+            mqtt_topic = mqtt_topic.substr(1, mqtt_topic.size());
+          }
+          else
+          {
+            // Check if the prefix is populated.
+            if (mqtt_topic_prefix.has_value())
+            {
+              // Prepend the mqtt topic prefix if available.
+              mqtt_topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
+            }
           }
           ros2mqtt.mqtt.topic = mqtt_topic;
 
@@ -335,12 +344,22 @@ void MqttClient::loadParameters() {
             exit(EXIT_FAILURE);
           }
 
+          // Check if it's an absolute topic (i.e. shouldn't have a prefix.).
           const char first = mqtt_topic[0];
           const bool is_absolute_topic = ('/' == first);
-          if (!is_absolute_topic && mqtt_topic_prefix.has_value())
+          if (is_absolute_topic)
           {
-            // Prepend the mqtt topic prefix if available.
-            mqtt_topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
+            // Strip the leading '/'.
+            mqtt_topic = mqtt_topic.substr(1, mqtt_topic.size());
+          }
+          else
+          {
+            // Check if the prefix is populated.
+            if (mqtt_topic_prefix.has_value())
+            {
+              // Prepend the mqtt topic prefix if available.
+              mqtt_topic = fmt::format("{}/{}", *mqtt_topic_prefix, mqtt_topic);
+            }
           }
 
           // mqtt2ros[k]/mqtt_topic and mqtt2ros[k]/ros_topic
