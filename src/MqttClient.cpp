@@ -252,9 +252,16 @@ void MqttClient::loadParameters() {
           // Get the MQTT topic.
           auto mqtt_topic = std::string(ros2mqtt_params[k]["mqtt_topic"]);
 
+          // Check if it's empty.
+          if (mqtt_topic.empty())
+          {
+            NODELET_ERROR("No valid MQTT topic for ROS topic `%s`", ros_topic.c_str());
+            exit(EXIT_FAILURE);
+          }
+
           // Check if this is an absolute topic name.
-          const auto& first = mqtt_topic.front();
-          const bool is_absolute_topic = ("/" == first);
+          const char first = mqtt_topic[0];
+          const bool is_absolute_topic = ('/' == first);
           if (!is_absolute_topic && mqtt_topic_prefix.has_value())
           {
             // Prepend the mqtt topic prefix if available.
@@ -317,9 +324,19 @@ void MqttClient::loadParameters() {
         if (mqtt2ros_params[k].hasMember("mqtt_topic") &&
             mqtt2ros_params[k].hasMember("ros_topic")) {
 
-          // Prepend the mqtt topic prefix if available.
+          // Get the MQTT topic.
           auto mqtt_topic = std::string(mqtt2ros_params[k]["mqtt_topic"]);
-          const bool is_absolute_topic = ("/" == first);
+
+          // Check if it's empty.
+          if (mqtt_topic.empty())
+          {
+            const auto ros_topic = std::string(mqtt2ros_params[k]["ros_topic"]);
+            NODELET_ERROR("No valid MQTT topic for ROS topic `%s`", ros_topic.c_str());
+            exit(EXIT_FAILURE);
+          }
+
+          const char first = mqtt_topic[0];
+          const bool is_absolute_topic = ('/' == first);
           if (!is_absolute_topic && mqtt_topic_prefix.has_value())
           {
             // Prepend the mqtt topic prefix if available.
