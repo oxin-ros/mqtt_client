@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 project(mqtt_client)
 
 find_package(ros_environment REQUIRED QUIET)
@@ -25,6 +25,13 @@ if(${ROS_VERSION} EQUAL 2)
   find_library(PahoMqttC_LIBRARY libpaho-mqtt3as.so.1 REQUIRED)
   find_library(PahoMqttCpp_LIBRARY libpaho-mqttpp3.so.1 REQUIRED)
 
+  include(FetchContent)
+  FetchContent_Declare(
+    utf8cpp
+    GIT_REPOSITORY https://github.com/nemtrif/utfcpp.git
+    GIT_TAG        v3.2.4)
+  FetchContent_MakeAvailable(utf8cpp)
+
   add_executable(${PROJECT_NAME} src/MqttClient.ros2.cpp)
 
   target_include_directories(${PROJECT_NAME} PUBLIC
@@ -34,6 +41,7 @@ if(${ROS_VERSION} EQUAL 2)
   target_link_libraries(${PROJECT_NAME}
     ${PahoMqttC_LIBRARY}
     ${PahoMqttCpp_LIBRARY}
+    utf8::cpp
   )
 
   ament_target_dependencies(${PROJECT_NAME}

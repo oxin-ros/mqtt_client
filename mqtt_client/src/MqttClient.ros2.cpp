@@ -46,6 +46,8 @@ SOFTWARE.
 #include <std_msgs/msg/u_int32.hpp>
 #include <std_msgs/msg/u_int64.hpp>
 #include <std_msgs/msg/u_int8.hpp>
+#include <std_msgs/msg/u_int8_multi_array.hpp>
+#include "utf8.h"
 
 
 namespace mqtt_client {
@@ -130,6 +132,10 @@ bool primitiveRosMessageToString(
     std_msgs::msg::Float64 msg;
     deserializeRosMessage(*serialized_msg, msg);
     primitive = std::to_string(msg.data);
+  } else if (msg_type == "std_msgs/msg/UInt8MultiArray") {
+    std_msgs::msg::UInt8MultiArray msg;
+    deserializeRosMessage(*serialized_msg, msg);
+    primitive = std::string(msg.data.begin(), msg.data.end());
   } else {
     found_primitive = false;
   }
@@ -818,6 +824,19 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
       }
     } catch (const std::invalid_argument& ex) {
     } catch (const std::out_of_range& ex) {
+    }
+  }
+
+  // check for non-UTF8 string.
+  if (!found_primitive) {
+    const bool is_valid_utf8 = utf8::is_valid(str_msg);
+    if (!is_valid_utf8) {
+      std_msgs::msg::UInt8MultiArray msg;
+      msg.data = std::vector<uint8_t>(str_msg.begin(), str_msg.end());
+      serializeRosMessage(msg, serialized_msg);
+
+      ros_msg_type = "std_msgs/msg/UInt8MultiArray";
+      found_primitive = true;
     }
   }
 
