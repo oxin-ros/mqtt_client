@@ -878,7 +878,8 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
 
 
 void MqttClient::connected(const std::string& cause) {
-  (void)cause;
+
+  (void) cause; // Avoid compiler warning for unused parameter.
 
   is_connected_ = true;
   std::string as_client =
@@ -901,7 +902,7 @@ void MqttClient::connected(const std::string& cause) {
 
 void MqttClient::connection_lost(const std::string& cause) {
 
-  (void) cause;
+  (void) cause; // Avoid compiler warning for unused parameter.
 
   RCLCPP_ERROR(get_logger(),
                "Connection to broker lost, will try to reconnect...");
@@ -920,7 +921,7 @@ void MqttClient::isConnectedService(
   mqtt_client_interfaces::srv::IsConnected::Request::SharedPtr request,
   mqtt_client_interfaces::srv::IsConnected::Response::SharedPtr response) {
 
-  (void) request;
+  (void) request; // Avoid compiler warning for unused parameter.
   response->connected = isConnected();
 }
 
@@ -1008,12 +1009,15 @@ void MqttClient::message_arrived(mqtt::const_message_ptr mqtt_msg) {
 }
 
 
-void MqttClient::delivery_complete(mqtt::delivery_token_ptr token) { (void)token; }
+void MqttClient::delivery_complete(mqtt::delivery_token_ptr token) {
+
+  (void) token; // Avoid compiler warning for unused parameter.
+}
 
 
 void MqttClient::on_success(const mqtt::token& token) {
 
-  (void)token;
+  (void) token; // Avoid compiler warning for unused parameter.
   is_connected_ = true;
 }
 
