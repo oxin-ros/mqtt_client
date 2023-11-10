@@ -1,6 +1,7 @@
 broker:
   host: localhost
   port: 1883
+  protocol: wss
 bridge:
   ros2mqtt:
     - ros_topic: /ping/ros
