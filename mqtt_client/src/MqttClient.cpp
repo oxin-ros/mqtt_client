@@ -453,10 +453,14 @@ void MqttClient::setupClient() {
   }
 
   // create MQTT client
-  const std::string uri = fmt::format("{}://{}:{}",
+  // TODO: quote MQTT ws spec for this base_path.
+  const std::string base_path = boost::algorithm::starts_with(broker_config_.protocol, "ws") ? "/ws" : "";
+  const std::string uri = fmt::format("{}://{}:{}{}",
                                       broker_config_.protocol,
                                       broker_config_.host,
-                                      broker_config_.port);
+                                      broker_config_.port,
+                                      base_path);
+  
   try {
     if (client_config_.buffer.enabled) {
       client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
