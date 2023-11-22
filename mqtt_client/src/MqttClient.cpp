@@ -30,6 +30,8 @@ SOFTWARE.
 #include <cstring>
 #include <vector>
 
+#include <boost/algorithm/string/predicate.hpp> // For boost;:algorithm::starts_with.
+
 #include <mqtt_client/MqttClient.h>
 #include <mqtt_client_interfaces/RosMsgType.h>
 #include <pluginlib/class_list_macros.h>
@@ -460,7 +462,7 @@ void MqttClient::setupClient() {
                                       broker_config_.host,
                                       broker_config_.port,
                                       base_path);
-  
+
   try {
     if (client_config_.buffer.enabled) {
       client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
