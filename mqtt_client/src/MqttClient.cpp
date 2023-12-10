@@ -362,21 +362,21 @@ bool MqttClient::loadParameter(const std::string& key, std::string& value,
 }
 
 
-std::filesystem::path MqttClient::resolvePath(const std::string& path_string) {
+boost::filesystem::path MqttClient::resolvePath(const std::string& path_string) {
 
-  std::filesystem::path path(path_string);
+  boost::filesystem::path path(path_string);
   if (path_string.empty()) return path;
   if (!path.has_root_path()) {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
     if (ros_home.empty())
-      ros_home = std::string(std::filesystem::current_path());
-    path = std::filesystem::path(ros_home);
+      ros_home = boost::filesystem::current_path().string();
+    path = boost::filesystem::path(ros_home);
     path.append(path_string);
   }
-  if (!std::filesystem::exists(path))
+  if (!boost::filesystem::exists(path))
     NODELET_WARN("Requested path '%s' does not exist",
-                 std::string(path).c_str());
+                 path.string().c_str());
   return path;
 }
 
@@ -432,11 +432,11 @@ void MqttClient::setupClient() {
   // SSL/TLS
   if (broker_config_.tls.enabled) {
     mqtt::ssl_options ssl;
-    ssl.set_trust_store(broker_config_.tls.ca_certificate);
+    ssl.set_trust_store(broker_config_.tls.ca_certificate.string());
     if (!client_config_.tls.certificate.empty() &&
         !client_config_.tls.key.empty()) {
-      ssl.set_key_store(client_config_.tls.certificate);
-      ssl.set_private_key(client_config_.tls.key);
+      ssl.set_key_store(client_config_.tls.certificate.string());
+      ssl.set_private_key(client_config_.tls.key.string());
       if (!client_config_.tls.password.empty())
         ssl.set_private_key_password(client_config_.tls.password);
     }
@@ -454,7 +454,7 @@ void MqttClient::setupClient() {
     if (client_config_.buffer.enabled) {
       client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
         uri, client_config_.id, client_config_.buffer.size,
-        client_config_.buffer.directory));
+        client_config_.buffer.directory.string()));
     } else {
       client_ = std::shared_ptr<mqtt::async_client>(
         new mqtt::async_client(uri, client_config_.id));

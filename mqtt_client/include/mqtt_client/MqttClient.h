@@ -27,7 +27,7 @@ SOFTWARE.
 
 #pragma once
 
-#include <filesystem>
+#include "boost/filesystem.hpp"
 #include <map>
 #include <memory>
 #include <string>
@@ -166,9 +166,9 @@ class MqttClient : public nodelet::Nodelet,
    *
    * @param   path_string  (relative) path as string
    *
-   * @return  std::filesystem::path  path variable
+   * @return  boost::filesystem::path  path variable
    */
-  std::filesystem::path resolvePath(const std::string& path_string);
+  boost::filesystem::path resolvePath(const std::string& path_string);
 
   /**
    * @brief Initializes broker connection and subscriptions.
@@ -336,7 +336,7 @@ class MqttClient : public nodelet::Nodelet,
     std::string pass;  ///< password
     struct {
       bool enabled;  ///< whether to connect via SSL/TLS
-      std::filesystem::path
+      boost::filesystem::path
         ca_certificate;  ///< public CA certificate trusted by client
     } tls;               ///< SSL/TLS-related variables
   };
@@ -349,7 +349,7 @@ class MqttClient : public nodelet::Nodelet,
     struct {
       bool enabled;                     ///< whether client buffer is enabled
       int size;                         ///< client buffer size
-      std::filesystem::path directory;  ///< client buffer directory
+      boost::filesystem::path directory;  ///< client buffer directory
     } buffer;                           ///< client buffer-related variables
     struct {
       std::string topic;         ///< last-will topic
@@ -361,8 +361,8 @@ class MqttClient : public nodelet::Nodelet,
     double keep_alive_interval;  ///< keep-alive interval
     int max_inflight;            ///< maximum number of inflight messages
     struct {
-      std::filesystem::path certificate;    ///< client certificate
-      std::filesystem::path key;            ///< client private keyfile
+      boost::filesystem::path certificate;    ///< client certificate
+      boost::filesystem::path key;            ///< client private keyfile
       std::string password;                 ///< decryption password for private key
       int version;                          ///< TLS version (https://github.com/eclipse/paho.mqtt.cpp/blob/master/src/mqtt/ssl_options.h#L305)
       bool verify;                          ///< Verify the client should conduct
