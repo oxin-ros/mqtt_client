@@ -98,9 +98,10 @@ elseif(${ROS_VERSION} EQUAL 1)
   )
 
   ## System dependencies are found with CMake's conventions
-  find_package(PahoMqttCpp REQUIRED)
-  set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
-
+  # Paho MQTT C++ apt package doesn't include CMake config
+  # find_package(PahoMqttCpp REQUIRED)
+  find_library(PahoMqttC_LIBRARY libpaho-mqtt3as.so.1 REQUIRED)
+  find_library(PahoMqttCpp_LIBRARY libpaho-mqttpp3.so.1 REQUIRED)
 
   ## Uncomment this if the package has a setup.py. This macro ensures
   ## modules and global scripts declared therein get installed
@@ -236,7 +237,8 @@ elseif(${ROS_VERSION} EQUAL 1)
   ## Specify libraries to link a library or executable target against
   target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
-    ${PahoMqttCpp_LIBRARIES}
+    ${PahoMqttC_LIBRARY}
+    ${PahoMqttCpp_LIBRARY}
   )
 
   #############
