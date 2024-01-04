@@ -195,7 +195,8 @@ elseif(${ROS_VERSION} EQUAL 1)
       roscpp
       std_msgs
       topic_tools
-    DEPENDS PahoMqttCpp
+    # TODO: investigate why this doesn't work.
+    #DEPENDS PahoMqttCpp
   )
 
   ###########
