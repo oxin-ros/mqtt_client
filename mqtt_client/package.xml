@@ -33,7 +33,8 @@
   <!-- ROS1 -->
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
   <depend condition="$ROS_VERSION == 1">nodelet</depend>
-  <depend condition="$ROS_VERSION == 1">paho-mqtt-cpp</depend>
+  <!-- NOTE: The paho-mqtt-cpp package doesn't exist in ROS melodic. -->
+  <!-- <depend condition="$ROS_VERSION == 1">paho-mqtt-cpp</depend> -->
   <depend condition="$ROS_VERSION == 1">roscpp</depend>
   <depend condition="$ROS_VERSION == 1">rosfmt</depend>
   <depend condition="$ROS_VERSION == 1">topic_tools</depend>
