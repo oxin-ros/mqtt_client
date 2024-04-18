@@ -334,6 +334,7 @@ class MqttClient : public nodelet::Nodelet,
     int port;          ///< broker port
     std::string user;  ///< username
     std::string pass;  ///< password
+    std::string protocol; ///< protocol (one of "tcp", "mqtt", "ws", "ssl", "mqtts", "wss")
     struct {
       bool enabled;  ///< whether to connect via SSL/TLS
       std::filesystem::path

@@ -160,8 +160,8 @@ void MqttClient::loadParameters() {
   declare_parameter("broker.user", rclcpp::ParameterType::PARAMETER_STRING, param_desc);
   param_desc.description = "password used for authenticating to the broker";
   declare_parameter("broker.pass", rclcpp::ParameterType::PARAMETER_STRING, param_desc);
-  param_desc.description = "whether to connect via SSL/TLS";
-  declare_parameter("broker.tls.enabled", rclcpp::ParameterType::PARAMETER_BOOL, param_desc);
+  param_desc.description = "the protocol used to connect to the broker (one of 'tcp', 'mqtt', 'ws', 'ssl', 'mqtts', 'wss')";
+  declare_parameter("broker.protocol", rclcpp::ParameterType::PARAMETER_STRING, param_desc);
   param_desc.description = "CA certificate file trusted by client (relative to ROS_HOME)";
   declare_parameter("broker.tls.ca_certificate", rclcpp::ParameterType::PARAMETER_STRING, param_desc);
 
@@ -233,10 +233,9 @@ void MqttClient::loadParameters() {
   if (loadParameter("broker.user", broker_config_.user)) {
     loadParameter("broker.pass", broker_config_.pass, "");
   }
-  if (loadParameter("broker.tls.enabled", broker_config_.tls.enabled, false)) {
-    loadParameter("broker.tls.ca_certificate", broker_tls_ca_certificate,
-                  "/etc/ssl/certs/ca-certificates.crt");
-  }
+  loadParameter("broker.protocol", broker_config_.protocol, "tcp");
+  loadParameter("broker.tls.ca_certificate", broker_tls_ca_certificate,
+                "/etc/ssl/certs/ca-certificates.crt");
 
   // load client parameters from parameter server
   std::string client_buffer_directory, client_tls_certificate, client_tls_key;
@@ -260,15 +259,13 @@ void MqttClient::loadParameters() {
   loadParameter("client.keep_alive_interval",
                 client_config_.keep_alive_interval, 60.0);
   loadParameter("client.max_inflight", client_config_.max_inflight, 65535);
-  if (broker_config_.tls.enabled) {
-    if (loadParameter("client.tls.certificate", client_tls_certificate)) {
-      loadParameter("client.tls.key", client_tls_key);
-      loadParameter("client.tls.password", client_config_.tls.password);
-      loadParameter("client.tls.version", client_config_.tls.version);
-      loadParameter("client.tls.verify", client_config_.tls.verify);
-      loadParameter("client.tls.alpn_protos", client_config_.tls.alpn_protos);
+  if (loadParameter("client.tls.certificate", client_tls_certificate)) {
+    loadParameter("client.tls.key", client_tls_key);
+    loadParameter("client.tls.password", client_config_.tls.password);
     }
-  }
+    loadParameter("client.tls.version", client_config_.tls.version);
+    loadParameter("client.tls.verify", client_config_.tls.verify);
+    loadParameter("client.tls.alpn_protos", client_config_.tls.alpn_protos);
 
   // resolve filepaths
   broker_config_.tls.ca_certificate = resolvePath(broker_tls_ca_certificate);
@@ -502,6 +499,10 @@ void MqttClient::setupSubscriptions() {
 
 void MqttClient::setupClient() {
 
+  if (broker_config_.protocol == "ws" || broker_config_.protocol == "wss") {
+    connect_options_ = mqtt::connect_options::ws();
+  }
+
   // basic client connection options
   connect_options_.set_automatic_reconnect(true);
   connect_options_.set_clean_session(client_config_.clean_session);
@@ -523,24 +524,22 @@ void MqttClient::setupClient() {
   }
 
   // SSL/TLS
-  if (broker_config_.tls.enabled) {
-    mqtt::ssl_options ssl;
-    ssl.set_trust_store(broker_config_.tls.ca_certificate);
-    if (!client_config_.tls.certificate.empty() &&
-        !client_config_.tls.key.empty()) {
-      ssl.set_key_store(client_config_.tls.certificate);
-      ssl.set_private_key(client_config_.tls.key);
-      if (!client_config_.tls.password.empty())
-        ssl.set_private_key_password(client_config_.tls.password);
-    }
-    ssl.set_ssl_version(client_config_.tls.version);
-    ssl.set_verify(client_config_.tls.verify);
-    ssl.set_alpn_protos(client_config_.tls.alpn_protos);
-    connect_options_.set_ssl(ssl);
+  mqtt::ssl_options ssl;
+  ssl.set_trust_store(broker_config_.tls.ca_certificate);
+  if (!client_config_.tls.certificate.empty() &&
+      !client_config_.tls.key.empty()) {
+    ssl.set_key_store(client_config_.tls.certificate);
+    ssl.set_private_key(client_config_.tls.key);
+    if (!client_config_.tls.password.empty())
+      ssl.set_private_key_password(client_config_.tls.password);
   }
+  ssl.set_ssl_version(client_config_.tls.version);
+  ssl.set_verify(client_config_.tls.verify);
+  ssl.set_alpn_protos(client_config_.tls.alpn_protos);
+  connect_options_.set_ssl(ssl);
 
   // create MQTT client
-  const std::string protocol = broker_config_.tls.enabled ? "ssl" : "tcp";
+  const std::string protocol = broker_config_.protocol;
   const std::string uri = fmt::format("{}://{}:{}", protocol, broker_config_.host,
                                       broker_config_.port);
   try {
