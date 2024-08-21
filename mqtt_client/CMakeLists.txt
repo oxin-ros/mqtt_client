@@ -92,7 +92,6 @@ elseif(${ROS_VERSION} EQUAL 1)
     mqtt_client_interfaces
     nodelet
     roscpp
-    rosfmt ## For fmt::format.
     std_msgs
     topic_tools
   )
@@ -102,6 +101,10 @@ elseif(${ROS_VERSION} EQUAL 1)
   # find_package(PahoMqttCpp REQUIRED)
   find_library(PahoMqttC_LIBRARY libpaho-mqtt3as.so.1 REQUIRED)
   find_library(PahoMqttCpp_LIBRARY libpaho-mqttpp3.so.1 REQUIRED)
+
+  find_package(fmt REQUIRED)
+  set(fmt_LIBRARIES fmt::fmt)
+
 
   ## Uncomment this if the package has a setup.py. This macro ensures
   ## modules and global scripts declared therein get installed
@@ -196,7 +199,9 @@ elseif(${ROS_VERSION} EQUAL 1)
       std_msgs
       topic_tools
     # TODO: investigate why this doesn't work.
-    #DEPENDS PahoMqttCpp
+    DEPENDS
+      fmt
+      PahoMqttCpp
   )
 
   ###########

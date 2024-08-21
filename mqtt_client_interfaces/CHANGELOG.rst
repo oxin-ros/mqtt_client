@@ -2,6 +2,12 @@
 Changelog for package mqtt_client_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.3.0 (2024-05-30)
+------------------
+
+2.2.1 (2024-03-19)
+------------------
+
 2.2.0 (2023-11-29)
 ------------------
 * Merge pull request `#35 <https://github.com/ika-rwth-aachen/mqtt_client/issues/35>`_ from mvccogo/main
