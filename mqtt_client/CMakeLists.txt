@@ -100,19 +100,37 @@ elseif(${ROS_VERSION} EQUAL 1)
 
   # System dependencies.
   include(FetchContent)
-  FetchContent_Declare(PahoMqttCpp
-    GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.cpp
-    GIT_TAG v1.4.1
-  )
-  FetchContent_MakeAvailable(PahoMqttCpp)
-  set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
 
-  FetchContent_Declare(fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 11.0.2
-  )
-  FetchContent_MakeAvailable(fmt)
-  set(fmt_LIBRARIES fmt::fmt)
+  find_package(PahoMqttCpp QUIET)
+  if(PahoMqttCpp_FOUND)
+    set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
+  else()
+    FetchContent_Declare(PahoMqttCpp
+      GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.cpp
+      GIT_TAG v1.4.1
+    )
+    FetchContent_MakeAvailable(PahoMqttCpp)
+    set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
+  endif()
+
+  find_package(fmt QUIET)
+  if(fmt_FOUND)
+    set(fmt_LIBRARIES fmt::fmt)
+  else()
+    FetchContent_Declare(fmt
+      GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+      GIT_TAG 10.2.1
+    )
+    FetchContent_MakeAvailable(fmt)
+    set(fmt_LIBRARIES fmt::fmt)
+  endif()
+
+  FetchContent_Declare(
+    utf8cpp
+    GIT_REPOSITORY https://github.com/nemtrif/utfcpp.git
+    GIT_TAG        v3.2.4)
+  FetchContent_MakeAvailable(utf8cpp)
+  set(utf8cpp_LIBRARIES utf8::cpp)
 
   ## Uncomment this if the package has a setup.py. This macro ensures
   ## modules and global scripts declared therein get installed
@@ -250,8 +268,9 @@ elseif(${ROS_VERSION} EQUAL 1)
   ## Specify libraries to link a library or executable target against
   target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
-    ${PahoMqttC_LIBRARY}
-    ${PahoMqttCpp_LIBRARY}
+    ${fmt_LIBRARIES}
+    ${PahoMqttCpp_LIBRARIES}
+    ${utf8cpp_LIBRARIES}
   )
 
   #############

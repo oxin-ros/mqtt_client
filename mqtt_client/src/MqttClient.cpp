@@ -30,6 +30,8 @@ SOFTWARE.
 #include <cstring>
 #include <vector>
 
+#include "utf8.h"
+
 #include <mqtt_client/MqttClient.h>
 #include <mqtt_client_interfaces/RosMsgType.h>
 #include <pluginlib/class_list_macros.h>
@@ -47,10 +49,9 @@ SOFTWARE.
 #include <std_msgs/UInt32.h>
 #include <std_msgs/UInt64.h>
 #include <std_msgs/UInt8.h>
-#include <std_msgs/Uint8MultiArray.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
-
 
 PLUGINLIB_EXPORT_CLASS(mqtt_client::MqttClient, nodelet::Nodelet)
 
@@ -139,8 +140,10 @@ bool primitiveRosMessageToString(const topic_tools::ShapeShifter::ConstPtr& msg,
              ros::message_traits::MD5Sum<std_msgs::Float64>::value()) {
     primitive = std::to_string(msg->instantiate<std_msgs::Float64>()->data);
   } else if (msg_type_md5 ==
-             ros::message_traits::MD5Sum<std_msgs::Uint8MultiArray>::value()) {
-    primitive = std::string(msg.data.begin(), msg.data.end());
+             ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value()) {
+    primitive = std::string(
+      msg->instantiate<std_msgs::UInt8MultiArray>()->data.begin(),
+      msg->instantiate<std_msgs::UInt8MultiArray>()->data.end());
   } else {
     found_primitive = false;
   }
@@ -764,11 +767,17 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
   if (!found_primitive) {
     const bool is_valid_utf8 = utf8::is_valid(str_msg);
     if (!is_valid_utf8) {
-      std_msgs::msg::UInt8MultiArray msg;
+      std_msgs::UInt8MultiArray msg;
       msg.data = std::vector<uint8_t>(str_msg.begin(), str_msg.end());
-      serializeRosMessage(msg, serialized_msg);
+      serializeRosMessage(msg, msg_buffer);
 
-      ros_msg_type = "std_msgs/msg/UInt8MultiArray";
+      // collect ROS message type information
+      msg_type_md5 = ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value();
+      msg_type_name =
+        ros::message_traits::DataType<std_msgs::UInt8MultiArray>::value();
+      msg_type_definition =
+        ros::message_traits::Definition<std_msgs::UInt8MultiArray>::value();
+
       found_primitive = true;
     }
   }
