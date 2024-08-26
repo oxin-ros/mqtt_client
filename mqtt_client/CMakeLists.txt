@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
+# While FetchContent only requires CMake 3.11, the convenience function
+# `FetchContent_MakeAvailable` was introduced in CMake 3.14
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 project(mqtt_client)
 
 find_package(ros_environment REQUIRED QUIET)
@@ -96,15 +98,21 @@ elseif(${ROS_VERSION} EQUAL 1)
     topic_tools
   )
 
-  ## System dependencies are found with CMake's conventions
-  # Paho MQTT C++ apt package doesn't include CMake config
-  # find_package(PahoMqttCpp REQUIRED)
-  find_library(PahoMqttC_LIBRARY libpaho-mqtt3as.so.1 REQUIRED)
-  find_library(PahoMqttCpp_LIBRARY libpaho-mqttpp3.so.1 REQUIRED)
+  # System dependencies.
+  include(FetchContent)
+  FetchContent_Declare(PahoMqttCpp
+    GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.cpp
+    GIT_TAG v1.4.1
+  )
+  FetchContent_MakeAvailable(PahoMqttCpp)
+  set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
 
-  find_package(fmt REQUIRED)
+  FetchContent_Declare(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 11.0.2
+  )
+  FetchContent_MakeAvailable(fmt)
   set(fmt_LIBRARIES fmt::fmt)
-
 
   ## Uncomment this if the package has a setup.py. This macro ensures
   ## modules and global scripts declared therein get installed
@@ -198,7 +206,6 @@ elseif(${ROS_VERSION} EQUAL 1)
       roscpp
       std_msgs
       topic_tools
-    # TODO: investigate why this doesn't work.
     DEPENDS
       fmt
       PahoMqttCpp

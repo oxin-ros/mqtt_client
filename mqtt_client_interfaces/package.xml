@@ -1,8 +1,8 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='utf8'?>
 <package format="3">
 
   <name>mqtt_client_interfaces</name>
-  <version>2.3.0</version>
+  <version>3.0.0</version>
   <description>Message and service definitions for mqtt_client</description>
 
   <maintainer email="lennart.reiher@rwth-aachen.de">Lennart Reiher</maintainer>
@@ -16,13 +16,13 @@
 
   <depend>ros_environment</depend>
 
-  <!-- ROS2 -->
+  
   <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
   <build_depend condition="$ROS_VERSION == 2">rosidl_default_generators</build_depend>
   <depend condition="$ROS_VERSION == 2">std_msgs</depend>
   <exec_depend condition="$ROS_VERSION == 2">rosidl_default_runtime</exec_depend>
 
-  <!-- ROS1 -->
+  
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
   <depend condition="$ROS_VERSION == 1">message_generation</depend>
   <depend condition="$ROS_VERSION == 1">std_msgs</depend>
