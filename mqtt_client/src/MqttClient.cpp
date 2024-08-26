@@ -30,6 +30,8 @@ SOFTWARE.
 #include <cstring>
 #include <vector>
 
+#include "utf8.h"
+
 #include <mqtt_client/MqttClient.h>
 #include <mqtt_client_interfaces/RosMsgType.h>
 #include <pluginlib/class_list_macros.h>
@@ -47,9 +49,9 @@ SOFTWARE.
 #include <std_msgs/UInt32.h>
 #include <std_msgs/UInt64.h>
 #include <std_msgs/UInt8.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
-
 
 PLUGINLIB_EXPORT_CLASS(mqtt_client::MqttClient, nodelet::Nodelet)
 
@@ -85,6 +87,7 @@ const std::string MqttClient::kLatencyRosTopicPrefix = "latencies/";
  *   std_msgs/Int64
  *   std_msgs/Float32
  *   std_msgs/Float64
+ *   std_msgs/UInt8MultiArray
  *
  * @param [in]  msg        generic ShapeShifter ROS message
  * @param [out] primitive  string representation of primitive message data
@@ -136,6 +139,11 @@ bool primitiveRosMessageToString(const topic_tools::ShapeShifter::ConstPtr& msg,
   } else if (msg_type_md5 ==
              ros::message_traits::MD5Sum<std_msgs::Float64>::value()) {
     primitive = std::to_string(msg->instantiate<std_msgs::Float64>()->data);
+  } else if (msg_type_md5 ==
+             ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value()) {
+    primitive = std::string(
+      msg->instantiate<std_msgs::UInt8MultiArray>()->data.begin(),
+      msg->instantiate<std_msgs::UInt8MultiArray>()->data.end());
   } else {
     found_primitive = false;
   }
@@ -362,21 +370,21 @@ bool MqttClient::loadParameter(const std::string& key, std::string& value,
 }
 
 
-std::filesystem::path MqttClient::resolvePath(const std::string& path_string) {
+boost::filesystem::path MqttClient::resolvePath(const std::string& path_string) {
 
-  std::filesystem::path path(path_string);
+  boost::filesystem::path path(path_string);
   if (path_string.empty()) return path;
   if (!path.has_root_path()) {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
     if (ros_home.empty())
-      ros_home = std::string(std::filesystem::current_path());
-    path = std::filesystem::path(ros_home);
+      ros_home = boost::filesystem::current_path().string();
+    path = boost::filesystem::path(ros_home);
     path.append(path_string);
   }
-  if (!std::filesystem::exists(path))
+  if (!boost::filesystem::exists(path))
     NODELET_WARN("Requested path '%s' does not exist",
-                 std::string(path).c_str());
+                 path.string().c_str());
   return path;
 }
 
@@ -432,11 +440,11 @@ void MqttClient::setupClient() {
   // SSL/TLS
   if (broker_config_.tls.enabled) {
     mqtt::ssl_options ssl;
-    ssl.set_trust_store(broker_config_.tls.ca_certificate);
+    ssl.set_trust_store(broker_config_.tls.ca_certificate.string());
     if (!client_config_.tls.certificate.empty() &&
         !client_config_.tls.key.empty()) {
-      ssl.set_key_store(client_config_.tls.certificate);
-      ssl.set_private_key(client_config_.tls.key);
+      ssl.set_key_store(client_config_.tls.certificate.string());
+      ssl.set_private_key(client_config_.tls.key.string());
       if (!client_config_.tls.password.empty())
         ssl.set_private_key_password(client_config_.tls.password);
     }
@@ -454,7 +462,7 @@ void MqttClient::setupClient() {
     if (client_config_.buffer.enabled) {
       client_ = std::shared_ptr<mqtt::async_client>(new mqtt::async_client(
         uri, client_config_.id, client_config_.buffer.size,
-        client_config_.buffer.directory));
+        client_config_.buffer.directory.string()));
     } else {
       client_ = std::shared_ptr<mqtt::async_client>(
         new mqtt::async_client(uri, client_config_.id));
@@ -508,7 +516,7 @@ void MqttClient::ros2mqtt(const topic_tools::ShapeShifter::ConstPtr& ros_msg,
 
     // resolve ROS messages to primitive strings if possible
     std::string payload;
-    bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
+    const bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
     if (found_primitive) {
       payload_buffer = std::vector<uint8_t>(payload.begin(), payload.end());
     } else {
@@ -752,6 +760,25 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
       }
     } catch (const std::invalid_argument& ex) {
     } catch (const std::out_of_range& ex) {
+    }
+  }
+
+  // check for non-UTF8 string.
+  if (!found_primitive) {
+    const bool is_valid_utf8 = utf8::is_valid(str_msg);
+    if (!is_valid_utf8) {
+      std_msgs::UInt8MultiArray msg;
+      msg.data = std::vector<uint8_t>(str_msg.begin(), str_msg.end());
+      serializeRosMessage(msg, msg_buffer);
+
+      // collect ROS message type information
+      msg_type_md5 = ros::message_traits::MD5Sum<std_msgs::UInt8MultiArray>::value();
+      msg_type_name =
+        ros::message_traits::DataType<std_msgs::UInt8MultiArray>::value();
+      msg_type_definition =
+        ros::message_traits::Definition<std_msgs::UInt8MultiArray>::value();
+
+      found_primitive = true;
     }
   }
 

@@ -1,8 +1,8 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='utf8'?>
 <package format="3">
 
   <name>mqtt_client</name>
-  <version>2.3.0</version>
+  <version>3.0.0</version>
   <description>Node that enables connected ROS-based devices or robots to exchange ROS messages via an MQTT broker using the MQTT protocol.</description>
 
   <maintainer email="lennart.reiher@rwth-aachen.de">Lennart Reiher</maintainer>
@@ -22,7 +22,7 @@
   <depend>ros_environment</depend>
   <depend>std_msgs</depend>
 
-  <!-- ROS2 -->
+  
   <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
   <depend condition="$ROS_VERSION == 2">libpaho-mqtt-dev</depend>
   <depend condition="$ROS_VERSION == 2">libpaho-mqttpp-dev</depend>
@@ -30,10 +30,11 @@
   <depend condition="$ROS_VERSION == 2">rclcpp_components</depend>
   <depend condition="$ROS_VERSION == 2">rcpputils</depend>
 
-  <!-- ROS1 -->
+  
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
   <depend condition="$ROS_VERSION == 1">nodelet</depend>
-  <depend condition="$ROS_VERSION == 1">paho-mqtt-cpp</depend>
+  
+  
   <depend condition="$ROS_VERSION == 1">roscpp</depend>
   <depend condition="$ROS_VERSION == 1">topic_tools</depend>
 

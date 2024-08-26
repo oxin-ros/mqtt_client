@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
+# While FetchContent only requires CMake 3.11, the convenience function
+# `FetchContent_MakeAvailable` was introduced in CMake 3.14
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 project(mqtt_client)
 
 find_package(ros_environment REQUIRED QUIET)
@@ -96,13 +98,39 @@ elseif(${ROS_VERSION} EQUAL 1)
     topic_tools
   )
 
-  ## System dependencies are found with CMake's conventions
-  find_package(PahoMqttCpp REQUIRED)
-  set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
+  # System dependencies.
+  include(FetchContent)
 
-  find_package(fmt REQUIRED)
-  set(fmt_LIBRARIES fmt::fmt)
+  find_package(PahoMqttCpp QUIET)
+  if(PahoMqttCpp_FOUND)
+    set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
+  else()
+    FetchContent_Declare(PahoMqttCpp
+      GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.cpp
+      GIT_TAG v1.4.1
+    )
+    FetchContent_MakeAvailable(PahoMqttCpp)
+    set(PahoMqttCpp_LIBRARIES PahoMqttCpp::paho-mqttpp3)
+  endif()
 
+  find_package(fmt QUIET)
+  if(fmt_FOUND)
+    set(fmt_LIBRARIES fmt::fmt)
+  else()
+    FetchContent_Declare(fmt
+      GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+      GIT_TAG 10.2.1
+    )
+    FetchContent_MakeAvailable(fmt)
+    set(fmt_LIBRARIES fmt::fmt)
+  endif()
+
+  FetchContent_Declare(
+    utf8cpp
+    GIT_REPOSITORY https://github.com/nemtrif/utfcpp.git
+    GIT_TAG        v3.2.4)
+  FetchContent_MakeAvailable(utf8cpp)
+  set(utf8cpp_LIBRARIES utf8::cpp)
 
   ## Uncomment this if the package has a setup.py. This macro ensures
   ## modules and global scripts declared therein get installed
@@ -242,6 +270,7 @@ elseif(${ROS_VERSION} EQUAL 1)
     ${catkin_LIBRARIES}
     ${fmt_LIBRARIES}
     ${PahoMqttCpp_LIBRARIES}
+    ${utf8cpp_LIBRARIES}
   )
 
   #############
