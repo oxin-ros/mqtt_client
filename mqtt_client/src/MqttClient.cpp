@@ -47,6 +47,7 @@ SOFTWARE.
 #include <std_msgs/UInt32.h>
 #include <std_msgs/UInt64.h>
 #include <std_msgs/UInt8.h>
+#include <std_msgs/Uint8MultiArray.h>
 #include <xmlrpcpp/XmlRpcException.h>
 #include <xmlrpcpp/XmlRpcValue.h>
 
@@ -85,6 +86,7 @@ const std::string MqttClient::kLatencyRosTopicPrefix = "latencies/";
  *   std_msgs/Int64
  *   std_msgs/Float32
  *   std_msgs/Float64
+ *   std_msgs/UInt8MultiArray
  *
  * @param [in]  msg        generic ShapeShifter ROS message
  * @param [out] primitive  string representation of primitive message data
@@ -136,6 +138,9 @@ bool primitiveRosMessageToString(const topic_tools::ShapeShifter::ConstPtr& msg,
   } else if (msg_type_md5 ==
              ros::message_traits::MD5Sum<std_msgs::Float64>::value()) {
     primitive = std::to_string(msg->instantiate<std_msgs::Float64>()->data);
+  } else if (msg_type_md5 ==
+             ros::message_traits::MD5Sum<std_msgs::Uint8MultiArray>::value()) {
+    primitive = std::string(msg.data.begin(), msg.data.end());
   } else {
     found_primitive = false;
   }
@@ -508,7 +513,7 @@ void MqttClient::ros2mqtt(const topic_tools::ShapeShifter::ConstPtr& ros_msg,
 
     // resolve ROS messages to primitive strings if possible
     std::string payload;
-    bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
+    const bool found_primitive = primitiveRosMessageToString(ros_msg, payload);
     if (found_primitive) {
       payload_buffer = std::vector<uint8_t>(payload.begin(), payload.end());
     } else {
@@ -752,6 +757,19 @@ void MqttClient::mqtt2primitive(mqtt::const_message_ptr mqtt_msg) {
       }
     } catch (const std::invalid_argument& ex) {
     } catch (const std::out_of_range& ex) {
+    }
+  }
+
+  // check for non-UTF8 string.
+  if (!found_primitive) {
+    const bool is_valid_utf8 = utf8::is_valid(str_msg);
+    if (!is_valid_utf8) {
+      std_msgs::msg::UInt8MultiArray msg;
+      msg.data = std::vector<uint8_t>(str_msg.begin(), str_msg.end());
+      serializeRosMessage(msg, serialized_msg);
+
+      ros_msg_type = "std_msgs/msg/UInt8MultiArray";
+      found_primitive = true;
     }
   }
 
